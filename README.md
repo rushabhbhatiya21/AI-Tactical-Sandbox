@@ -1,0 +1,6 @@
+C++ 20
+CMake
+GLFW
+GLAD
+GLM
+OpenGL
