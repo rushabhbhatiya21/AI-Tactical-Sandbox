@@ -93,6 +93,7 @@ endif()
 
 target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/gameLayer")
 target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/platform")
+target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/renderer")
 target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC thirdParty/glad/include)
 target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC thirdParty/stb)
 target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC thirdParty/glm-0.9.8.5/glm)
