@@ -4,6 +4,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include "gameMain.h"
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 
@@ -66,6 +68,7 @@ int main()
 
 #pragma endregion
 
+	initGame();
 
 #pragma region render loop
 
@@ -87,6 +90,7 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// update game here
+		updateGame();
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 		// -------------------------------------------------------------------------------
@@ -99,8 +103,9 @@ int main()
 
 #pragma region shutdown
 
-	std::cout << "[INFO] Application shutting down" << std::endl;
+	closeGame();
 	glfwTerminate();
+	std::cout << "[INFO] Application shutting down" << std::endl;
 
 #pragma endregion
 
