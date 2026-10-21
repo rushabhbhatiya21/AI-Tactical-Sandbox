@@ -38,10 +38,13 @@ void initGame()
 	renderer = std::make_unique<Renderer>();
 }
 
-void updateGame()
+void updateGame(float deltaTime)
 {
 	renderer->beginFrame();
+	shader->use();
+	shader->setVec4("objectColor", 1.0f, 0.0f, 0.0f, 1.0f); // Red
 	renderer->draw(*triangleMesh2, defaultTransform, camera, *shader);
+	shader->setVec4("objectColor", 0.0f, 1.0f, 0.0f, 1.0f); // Green
 	renderer->draw(*triangleMesh, defaultTransform, camera, *shader);
 	renderer->endFrame();
 }
@@ -54,4 +57,8 @@ void framesizeCallback(int w, int h)
 
 void closeGame()
 {
+	triangleMesh.reset();
+	triangleMesh2.reset();
+	shader.reset();
+	renderer.reset();
 }
