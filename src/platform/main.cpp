@@ -117,6 +117,7 @@ int main()
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
 	glViewport(0, 0, width, height);
+	framesizeCallback(width, height);
 }
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
