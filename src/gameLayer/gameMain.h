@@ -2,6 +2,7 @@
 #include "world.h"
 #include "camera.h"
 #include "material.h"
+#include "playerController.h"
 
 #include "types/vertex.h"
 #include "types/index.h"
@@ -34,6 +35,9 @@ private:
 	std::unique_ptr<Mesh> cubeMesh;
 	std::unique_ptr<Shader> shader;
 	std::unique_ptr<Renderer> renderer;
+	std::unique_ptr<PlayerController> playerController;
+
+	bool debugCameraEnabled = false;
 
 	// Arena ground - muted olive-gray
 	Material groundMaterial{ glm::vec3(0.30f, 0.32f, 0.29f), glm::vec3(0.08f), 8.0f };
@@ -46,4 +50,7 @@ private:
 
 	// Obstacle 2 — weathered orange
 	Material obstacle2Material{ glm::vec3(0.65f, 0.30f, 0.12f), glm::vec3(0.20f, 0.20f, 0.20f), 20.0f };
+
+	// Player — muted tactical teal
+	Material playerMaterial{ glm::vec3(0.12f, 0.48f, 0.42f), glm::vec3(0.35f, 0.35f, 0.35f), 32.0f };
 };

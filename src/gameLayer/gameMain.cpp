@@ -64,24 +64,43 @@ void Game::initGame()
 
 #pragma endregion
 
+#pragma region player
+
+	GameObject& player = world.createGameObject();
+	player.transform.position = glm::vec3(0.0f, 1.0f, 4.0f);
+	player.transform.scale = glm::vec3(0.6f, 1.8f, 0.6f);
+	player.renderComponent = std::make_unique<RenderComponent>(*cubeMesh, playerMaterial);
+
+	playerController = std::make_unique<PlayerController>(player);
+
+#pragma endregion
+
 }
 
 void Game::updateGame(float deltaTime, const InputState& inputState)
 {
 	world.update(deltaTime);
 
-	if (inputState.moveForward)
-		camera.processKeyboard(FORWARD, deltaTime);
-	if (inputState.moveBackward)
-		camera.processKeyboard(BACKWARD, deltaTime);
-	if (inputState.moveRight)
-		camera.processKeyboard(RIGHT, deltaTime);
-	if (inputState.moveLeft)
-		camera.processKeyboard(LEFT, deltaTime);
-	if (inputState.moveUp)
-		camera.processKeyboard(UP, deltaTime);
-	if (inputState.moveDown)
-		camera.processKeyboard(DOWN, deltaTime);
+	if (inputState.toggleDebugCamera)
+		debugCameraEnabled = !debugCameraEnabled;
+
+	if (!debugCameraEnabled)
+		playerController->update(deltaTime, inputState);
+	else
+	{
+		if (inputState.moveForward)
+			camera.processKeyboard(FORWARD, deltaTime);
+		if (inputState.moveBackward)
+			camera.processKeyboard(BACKWARD, deltaTime);
+		if (inputState.moveRight)
+			camera.processKeyboard(RIGHT, deltaTime);
+		if (inputState.moveLeft)
+			camera.processKeyboard(LEFT, deltaTime);
+		if (inputState.moveUp)
+			camera.processKeyboard(UP, deltaTime);
+		if (inputState.moveDown)
+			camera.processKeyboard(DOWN, deltaTime);
+	}
 
 	const std::vector<std::unique_ptr<GameObject>>& gameObjects = world.getGameObjects();
 	renderer->beginFrame();
@@ -114,12 +133,14 @@ void Game::framesizeCallback(int w, int h)
 
 void Game::processMouseMovement(float xoffset, float yoffset)
 {
-	camera.processMouseMovement(xoffset, yoffset);
+	if (debugCameraEnabled)
+		camera.processMouseMovement(xoffset, yoffset);
 }
 
 void Game::processMouseScroll(float yoffset)
 {
-	camera.processMouseScroll(yoffset);
+	if (debugCameraEnabled)
+		camera.processMouseScroll(yoffset);
 }
 
 void Game::closeGame()

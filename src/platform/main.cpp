@@ -182,6 +182,16 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 // ---------------------------------------------------------------------------------------------------------
 void processInput(GLFWwindow* window, InputState& inputState)
 {
+	inputState.toggleDebugCamera = false;
+	bool debugCameraPressed =
+		glfwGetKey(window, GLFW_KEY_F1) == GLFW_PRESS;
+
+	if (debugCameraPressed && !inputState.debugCameraWasPressed)
+	{
+		inputState.toggleDebugCamera = true;
+	}
+	inputState.debugCameraWasPressed = debugCameraPressed;
+
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
 
