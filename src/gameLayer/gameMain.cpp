@@ -1,64 +1,58 @@
 #include "gameMain.h"
-#include <vector>
-#include <memory>
+#include "input/inputState.h"
 
-#include <types/vertex.h>
-#include <types/index.h>
-#include <types/transform.h>
 #include <mesh.h>
 #include <camera.h>
 #include <shader.h>
 #include <renderer.h>
 
-std::vector<Vertex> vertices = {
-	Vertex{ { -0.5f, -0.5f, 0.0f },{ 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f } },
-	Vertex{ { 0.5f,  -0.5f, 0.0f },{ 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f } },
-	Vertex{ { 0.0f,   0.5f, 0.0f },{ 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f } }
-};
+Game::Game() = default;
+Game::~Game() = default;
 
-std::vector<Vertex> vertices2 = {
-	Vertex{ { -0.5f, -0.5f, 2.0f },{ 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f } },
-	Vertex{ { 0.5f,  -0.5f, 2.0f },{ 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f } },
-	Vertex{ { 0.0f,   0.5f, 2.0f },{ 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f } }
-};
-std::vector<Index> indices = { 0, 1, 2 };
-
-std::unique_ptr<Mesh> triangleMesh;
-std::unique_ptr<Mesh> triangleMesh2;
-Transform defaultTransform;
-Camera camera;
-std::unique_ptr<Shader> shader;
-std::unique_ptr<Renderer> renderer;
-
-void initGame()
+void Game::initGame()
 {
-	triangleMesh2 = std::make_unique<Mesh>(vertices2, indices);
 	triangleMesh = std::make_unique<Mesh>(vertices, indices);
 	shader = std::make_unique<Shader>(RESOURCES_PATH "shaders/basic.vs", RESOURCES_PATH "shaders/basic.fs");
 	renderer = std::make_unique<Renderer>();
+
+	GameObject& player = world.createGameObject();
+	player.transform.position = glm::vec3(-1.0f, 0.0f, 0.0f);
+
+	GameObject& wall = world.createGameObject();
+	wall.transform.position = glm::vec3(1.0f, 0.0f, 0.0f);
+
+	player.renderComponent = std::make_unique<RenderComponent>(*triangleMesh, greenMaterial);
+	wall.renderComponent = std::make_unique<RenderComponent>(*triangleMesh, redMaterial);
 }
 
-void updateGame(float deltaTime)
+void Game::updateGame(float deltaTime, const InputState& inputState)
 {
+	world.update(deltaTime);
+	const std::vector<std::unique_ptr<GameObject>>& gameObjects = world.getGameObjects();
+
 	renderer->beginFrame();
 	shader->use();
-	shader->setVec4("objectColor", 1.0f, 0.0f, 0.0f, 1.0f); // Red
-	renderer->draw(*triangleMesh2, defaultTransform, camera, *shader);
-	shader->setVec4("objectColor", 0.0f, 1.0f, 0.0f, 1.0f); // Green
-	renderer->draw(*triangleMesh, defaultTransform, camera, *shader);
+	for (const auto& gameObject : gameObjects)
+	{
+		if (!gameObject || !gameObject->renderComponent) continue;
+
+		shader->setVec4("objectColor", gameObject->renderComponent->material.color);
+		renderer->draw(gameObject->renderComponent->mesh, gameObject->transform, camera, *shader);
+	}
+
 	renderer->endFrame();
 }
 
-void framesizeCallback(int w, int h)
+void Game::framesizeCallback(int w, int h)
 {
-	if (h <= 0) return;
+	if (w <= 0 || h <= 0) return;
 	camera.setAspectRatio((float)w / h);
 }
 
-void closeGame()
+void Game::closeGame()
 {
+	world.clear();
 	triangleMesh.reset();
-	triangleMesh2.reset();
 	shader.reset();
 	renderer.reset();
 }

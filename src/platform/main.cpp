@@ -5,9 +5,10 @@
 #include <GLFW/glfw3.h>
 
 #include "gameMain.h"
+#include "input/inputState.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void processInput(GLFWwindow* window);
+void processInput(GLFWwindow* window, InputState& inputState);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -68,7 +69,9 @@ int main()
 
 #pragma endregion
 
-	initGame();
+	Game game;
+	glfwSetWindowUserPointer(window, &game);
+	game.initGame();
 
 #pragma region render loop
 
@@ -82,7 +85,8 @@ int main()
 
 		// input
 		// -----
-		processInput(window);
+		InputState inputState;
+		processInput(window, inputState);
 
 		// render
 		// ------
@@ -90,7 +94,7 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// update game here
-		updateGame(deltaTime);
+		game.updateGame(deltaTime, inputState);
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 		// -------------------------------------------------------------------------------
@@ -103,7 +107,7 @@ int main()
 
 #pragma region shutdown
 
-	closeGame();
+	game.closeGame();
 	glfwTerminate();
 	std::cout << "[INFO] Application shutting down" << std::endl;
 
@@ -117,13 +121,24 @@ int main()
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
 	glViewport(0, 0, width, height);
-	framesizeCallback(width, height);
+	auto* game = static_cast<Game*>(glfwGetWindowUserPointer(window));
+	if (!game) return;
+	game->framesizeCallback(width, height);
 }
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
-void processInput(GLFWwindow* window)
+void processInput(GLFWwindow* window, InputState& inputState)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
+
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+		inputState.moveForward = true;
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+		inputState.moveBackward = true;
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+		inputState.moveLeft = true;
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+		inputState.moveRight = true;
 }
