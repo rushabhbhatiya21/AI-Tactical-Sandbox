@@ -23,23 +23,27 @@ public:
 	void initGame();
 	void updateGame(float dt, const InputState& inputState);
 	void framesizeCallback(int w, int h);
+	void processMouseMovement(float xoffset, float yoffset);
+	void processMouseScroll(float yoffset);
 	void closeGame();
 
 private:
 	World world;
-	Camera camera;
-	std::unique_ptr<Mesh> triangleMesh;
+	Camera camera{ glm::vec3(18.0f, 16.0f, 12.0f), glm::vec3(0.0f, 1.0f, 0.0f), -146.3f, -36.5f };
+
+	std::unique_ptr<Mesh> cubeMesh;
 	std::unique_ptr<Shader> shader;
 	std::unique_ptr<Renderer> renderer;
 
-	Material redMaterial{ glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) };
-	Material greenMaterial{ glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) };
+	// Arena ground - muted olive-gray
+	Material groundMaterial{ glm::vec3(0.30f, 0.32f, 0.29f), glm::vec3(0.08f), 8.0f };
 
-	std::vector<Vertex> vertices = {
-	Vertex{ { -0.5f, -0.5f, 0.0f },{ 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f } },
-	Vertex{ { 0.5f,  -0.5f, 0.0f },{ 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f } },
-	Vertex{ { 0.0f,   0.5f, 0.0f },{ 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f } }
-	};
+	// Arena walls — muted concrete
+	Material wallMaterial{ glm::vec3(0.38f, 0.42f, 0.46f), glm::vec3(0.15f), 16.0f };
 
-	std::vector<Index> indices = { 0, 1, 2 };
+	// Obstacle 1 — blue-gray metal
+	Material obstacle1Material{ glm::vec3(0.22f, 0.35f, 0.48f), glm::vec3(0.45f, 0.45f, 0.45f), 48.0f };
+
+	// Obstacle 2 — weathered orange
+	Material obstacle2Material{ glm::vec3(0.65f, 0.30f, 0.12f), glm::vec3(0.20f, 0.20f, 0.20f), 20.0f };
 };
