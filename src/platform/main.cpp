@@ -8,11 +8,18 @@
 #include "input/inputState.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window, InputState& inputState);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
+
+// mouse
+float lastX = (float)SCR_WIDTH / 2.f;
+float lastY = (float)SCR_HEIGHT / 2.f;
+bool firstMouse = true;
 
 // time
 float deltaTime = 0.0f;	// Time between current frame and last frame
@@ -47,6 +54,12 @@ int main()
 	}
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetScrollCallback(window, scroll_callback);
+
+	// tell GLFW to capture our mouse
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
 	std::cout << "[INFO] Window created" << std::endl;
 
 #pragma endregion
@@ -69,9 +82,14 @@ int main()
 
 #pragma endregion
 
+
+#pragma region init game
+
 	Game game;
 	glfwSetWindowUserPointer(window, &game);
 	game.initGame();
+
+#pragma endregion
 
 #pragma region render loop
 
@@ -116,6 +134,8 @@ int main()
 	return 0;
 }
 
+#pragma region callbacks
+
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 // ---------------------------------------------------------------------------------------------
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -125,6 +145,38 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	if (!game) return;
 	game->framesizeCallback(width, height);
 }
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+	auto* game = static_cast<Game*>(glfwGetWindowUserPointer(window));
+	if (!game) return;
+	if (firstMouse) // initially set to true
+	{
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
+
+	float xoffset = xpos - lastX;
+	float yoffset = lastY - ypos; // reversed since y-coordinates range from bottom to top
+
+	lastX = xpos;
+	lastY = ypos;
+
+	game->processMouseMovement(static_cast<float>(xoffset), static_cast<float>(yoffset));
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+	auto* game = static_cast<Game*>(glfwGetWindowUserPointer(window));
+	if (!game) return;
+	game->processMouseScroll(static_cast<float>(yoffset));
+}
+
+#pragma region endregion
+
+
+#pragma region input
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
@@ -141,4 +193,10 @@ void processInput(GLFWwindow* window, InputState& inputState)
 		inputState.moveLeft = true;
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
 		inputState.moveRight = true;
+	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+		inputState.moveUp = true;
+	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+		inputState.moveDown = true;
 }
+
+#pragma endregion
