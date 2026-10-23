@@ -2,7 +2,7 @@
 
 class Mesh;
 class Transform;
-class Camera;
+class ICamera;
 class Shader;
 
 class Renderer
@@ -12,7 +12,7 @@ public:
 	~Renderer();
 	void beginFrame();
 	void endFrame();
-	void draw(const Mesh& mesh, const Transform& transform, const Camera& camera, const Shader& shader);
+	void draw(const Mesh& mesh, const Transform& transform, const ICamera& camera, const Shader& shader);
 
 private:
 

@@ -1,6 +1,6 @@
 #include "renderer.h"
 #include "mesh.h"
-#include "camera.h"
+#include "ICamera.h"
 #include "shader.h"
 #include "types/transform.h"
 
@@ -23,7 +23,7 @@ void Renderer::endFrame()
 
 }
 
-void Renderer::draw(const Mesh& mesh, const Transform& transform, const Camera& camera, const Shader& shader)
+void Renderer::draw(const Mesh& mesh, const Transform& transform, const ICamera& camera, const Shader& shader)
 {
 	shader.use();
 
