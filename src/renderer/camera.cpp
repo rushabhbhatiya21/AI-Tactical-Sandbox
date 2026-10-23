@@ -24,6 +24,18 @@ Camera::Camera(float posX, float posY, float posZ, float upX, float upY, float u
     updateCameraVectors();
 }
 
+// returns the view matrix calculated using Euler Angles and the LookAt Matrix
+glm::mat4 Camera::getViewMatrix() const
+{
+    //return calculate_lookAt_matrix(Position, Position + Front, Up);
+    return glm::lookAt(Position, Position + Front, Up);
+}
+
+glm::mat4 Camera::getProjectionMatrix() const
+{
+    return glm::perspective(glm::radians(Zoom), aspectRatio, nearPlane, farPlane);
+}
+
 // Custom implementation of the LookAt function
 glm::mat4 Camera::calculate_lookAt_matrix(glm::vec3 position, glm::vec3 target, glm::vec3 worldUp) const
 {
@@ -55,13 +67,6 @@ glm::mat4 Camera::calculate_lookAt_matrix(glm::vec3 position, glm::vec3 target, 
 
     // Return lookAt matrix as combination of translation and rotation matrix
     return rotation * translation; // Remember to read from right to left (first translation then rotation)
-}
-
-// returns the view matrix calculated using Euler Angles and the LookAt Matrix
-glm::mat4 Camera::getViewMatrix() const
-{
-    //return calculate_lookAt_matrix(Position, Position + Front, Up);
-    return glm::lookAt(Position, Position + Front, Up);
 }
 
 // processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
@@ -119,11 +124,6 @@ void Camera::processMouseScroll(float yoffset)
         Zoom = 1.f;
     if (Zoom > 45.f)
         Zoom = 45.f;
-}
-
-glm::mat4 Camera::getProjectionMatrix() const
-{
-	return glm::perspective(glm::radians(Zoom), aspectRatio, nearPlane, farPlane);
 }
 
 void Camera::setAspectRatio(float ratio)

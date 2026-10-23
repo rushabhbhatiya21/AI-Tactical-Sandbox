@@ -1,5 +1,5 @@
 #pragma once
-
+#include "ICamera.h"
 #include <glad/glad.h> // include glad to get all the required OpenGL headers
 
 #include <glm/glm.hpp>
@@ -24,7 +24,7 @@ const float SENSITIVITY = 0.1f;
 const float ZOOM = 45.0f;
 
 // An abstract camera class that processes input and calculates the corresponding Euler Angles, Vectors and Matrices for use in OpenGL
-class Camera
+class Camera : public ICamera
 {
 public:
     // camera Attributes
@@ -53,12 +53,12 @@ public:
     // Camera constructor with scalar values
     Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw = YAW, float pitch = PITCH);
 
+    glm::mat4 getViewMatrix() const override;
+    glm::mat4 getProjectionMatrix() const override;
     glm::mat4 calculate_lookAt_matrix(glm::vec3 position, glm::vec3 target, glm::vec3 worldUp) const;
-    glm::mat4 getViewMatrix() const;
     void processMouseMovement(float xoffset, float yoffset, GLboolean constrainPitch = true);
     void processKeyboard(Camera_Movement direction, float deltaTime);
     void processMouseScroll(float yoffset);
-    glm::mat4 getProjectionMatrix() const;
     void setAspectRatio(float ratio);
 
 private:
