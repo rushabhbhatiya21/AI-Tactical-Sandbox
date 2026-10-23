@@ -7,10 +7,15 @@
 #include "gameMain.h"
 #include "input/inputState.h"
 
+struct KeyEdgeState
+{
+	bool debugCameraWasPressed = false;
+};
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-void processInput(GLFWwindow* window, InputState& inputState);
+void processInput(GLFWwindow* window, InputState& inputState, KeyEdgeState& edges);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -93,6 +98,8 @@ int main()
 
 #pragma region render loop
 
+	KeyEdgeState edges;
+
 	while (!glfwWindowShouldClose(window))
 	{
 		// per-frame time logic
@@ -104,7 +111,7 @@ int main()
 		// input
 		// -----
 		InputState inputState;
-		processInput(window, inputState);
+		processInput(window, inputState, edges);
 
 		// render
 		// ------
@@ -152,16 +159,16 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	if (!game) return;
 	if (firstMouse) // initially set to true
 	{
-		lastX = xpos;
-		lastY = ypos;
+		lastX = static_cast<float>(xpos);
+		lastY = static_cast<float>(ypos);
 		firstMouse = false;
 	}
 
-	float xoffset = xpos - lastX;
-	float yoffset = lastY - ypos; // reversed since y-coordinates range from bottom to top
+	float xoffset = static_cast<float>(xpos) - lastX;
+	float yoffset = lastY - static_cast<float>(ypos); // reversed since y-coordinates range from bottom to top
 
-	lastX = xpos;
-	lastY = ypos;
+	lastX = static_cast<float>(xpos);
+	lastY = static_cast<float>(ypos);
 
 	game->processMouseMovement(static_cast<float>(xoffset), static_cast<float>(yoffset));
 }
@@ -180,17 +187,17 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
-void processInput(GLFWwindow* window, InputState& inputState)
+void processInput(GLFWwindow* window, InputState& inputState, KeyEdgeState& edges)
 {
 	inputState.toggleDebugCamera = false;
-	bool debugCameraPressed =
-		glfwGetKey(window, GLFW_KEY_F1) == GLFW_PRESS;
 
-	if (debugCameraPressed && !inputState.debugCameraWasPressed)
+	bool debugCameraPressed = glfwGetKey(window, GLFW_KEY_F1) == GLFW_PRESS;
+
+	if (debugCameraPressed && !edges.debugCameraWasPressed)
 	{
 		inputState.toggleDebugCamera = true;
 	}
-	inputState.debugCameraWasPressed = debugCameraPressed;
+	edges.debugCameraWasPressed = debugCameraPressed;
 
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);

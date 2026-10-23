@@ -75,6 +75,7 @@ void Game::initGame()
 
 #pragma endregion
 
+	thirdPersonCamera = std::make_unique<ThirdPersonCamera>(player);
 }
 
 void Game::updateGame(float deltaTime, const InputState& inputState)
@@ -85,7 +86,10 @@ void Game::updateGame(float deltaTime, const InputState& inputState)
 		debugCameraEnabled = !debugCameraEnabled;
 
 	if (!debugCameraEnabled)
-		playerController->update(deltaTime, inputState);
+	{
+		playerController->update(deltaTime, inputState, thirdPersonCamera->getYaw());
+		thirdPersonCamera->update(deltaTime);
+	}
 	else
 	{
 		if (inputState.moveForward)
@@ -119,7 +123,10 @@ void Game::updateGame(float deltaTime, const InputState& inputState)
 		shader->setVec3("material.diffuse", gameObject->renderComponent->material.diffuse);
 		shader->setVec3("material.specular", gameObject->renderComponent->material.specular);
 		shader->setFloat("material.shininess", gameObject->renderComponent->material.shininess);
-		renderer->draw(gameObject->renderComponent->mesh, gameObject->transform, camera, *shader);
+		if (debugCameraEnabled)
+			renderer->draw(gameObject->renderComponent->mesh, gameObject->transform, camera, *shader);
+		else
+			renderer->draw(gameObject->renderComponent->mesh, gameObject->transform, *thirdPersonCamera, *shader);
 	}
 
 	renderer->endFrame();
@@ -135,6 +142,8 @@ void Game::processMouseMovement(float xoffset, float yoffset)
 {
 	if (debugCameraEnabled)
 		camera.processMouseMovement(xoffset, yoffset);
+	else
+		thirdPersonCamera->processMouseMovement(xoffset, yoffset);
 }
 
 void Game::processMouseScroll(float yoffset)

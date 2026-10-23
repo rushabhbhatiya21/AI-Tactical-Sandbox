@@ -3,6 +3,7 @@
 #include "camera.h"
 #include "material.h"
 #include "playerController.h"
+#include "thirdPersonCamera.h"
 
 #include "types/vertex.h"
 #include "types/index.h"
@@ -36,6 +37,7 @@ private:
 	std::unique_ptr<Shader> shader;
 	std::unique_ptr<Renderer> renderer;
 	std::unique_ptr<PlayerController> playerController;
+	std::unique_ptr<ThirdPersonCamera> thirdPersonCamera;
 
 	bool debugCameraEnabled = false;
 

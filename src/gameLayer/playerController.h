@@ -7,9 +7,9 @@ class PlayerController
 {
 public:
 	PlayerController(GameObject& player);
-	void update(float dt, const InputState& input);
+	void update(float dt, const InputState& input, float yaw);
 
 private:
-	float movementSpeed = 5.0f;
 	GameObject& player;
+	float movementSpeed = 5.0f;
 };
