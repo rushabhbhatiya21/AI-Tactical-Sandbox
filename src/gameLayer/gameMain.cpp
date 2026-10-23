@@ -20,6 +20,13 @@ void Game::initGame()
 
 	shader = std::make_unique<Shader>(RESOURCES_PATH "shaders/basic_lighting.vs", RESOURCES_PATH "shaders/basic_lighting.fs");
 	renderer = std::make_unique<Renderer>();
+	physicsWorld.init();
+
+	// The cube mesh is a unit cube, so a collider's half-extents are half the object's scale
+	auto addStaticCollider = [this](const GameObject& gameObject)
+	{
+		physicsWorld.addStaticBox(gameObject.transform.position, gameObject.transform.scale * 0.5f);
+	};
 
 #pragma region ground & walls
 
@@ -27,26 +34,31 @@ void Game::initGame()
 	ground.transform.scale = glm::vec3(20.0f, 0.2f, 20.0f);
 	ground.transform.position.y = 0.1f;
 	ground.renderComponent = std::make_unique<RenderComponent>(*cubeMesh, groundMaterial);
+	addStaticCollider(ground);
 
 	GameObject& northWall = world.createGameObject();
 	northWall.transform.scale = glm::vec3(20.0f, 3.0f, 1.0f);
 	northWall.transform.position = glm::vec3(0.0f, 1.5f, -10.0f);
 	northWall.renderComponent = std::make_unique<RenderComponent>(*cubeMesh, wallMaterial);
+	addStaticCollider(northWall);
 
 	GameObject& southWall = world.createGameObject();
 	southWall.transform.scale = glm::vec3(20.0f, 3.0f, 1.0f);
 	southWall.transform.position = glm::vec3(0.0f, 1.5f, 10.0f);
 	southWall.renderComponent = std::make_unique<RenderComponent>(*cubeMesh, wallMaterial);
+	addStaticCollider(southWall);
 
 	GameObject& easthWall = world.createGameObject();
 	easthWall.transform.scale = glm::vec3(1.0f, 3.0f, 20.0f);
 	easthWall.transform.position = glm::vec3(10.0f, 1.5f, 0.0f);
 	easthWall.renderComponent = std::make_unique<RenderComponent>(*cubeMesh, wallMaterial);
+	addStaticCollider(easthWall);
 
 	GameObject& westhWall = world.createGameObject();
 	westhWall.transform.scale = glm::vec3(1.0f, 3.0f, 20.0f);
 	westhWall.transform.position = glm::vec3(-10.0f, 1.5f, 0.0f);
 	westhWall.renderComponent = std::make_unique<RenderComponent>(*cubeMesh, wallMaterial);
+	addStaticCollider(westhWall);
 
 #pragma endregion
 
@@ -56,11 +68,13 @@ void Game::initGame()
 	obstacleA.transform.position = glm::vec3(-4.0f, 1.2f, -2.0f);
 	obstacleA.transform.scale = glm::vec3(2.0f, 2.0f, 1.0f);
 	obstacleA.renderComponent = std::make_unique<RenderComponent>(*cubeMesh, obstacle1Material);
+	addStaticCollider(obstacleA);
 
 	GameObject& obstacleB = world.createGameObject();
 	obstacleB.transform.position = glm::vec3(3.0f, 0.8f, -3.0f);
 	obstacleB.transform.scale = glm::vec3(3.0f, 1.2f, 1.5f);
 	obstacleB.renderComponent = std::make_unique<RenderComponent>(*cubeMesh, obstacle2Material);
+	addStaticCollider(obstacleB);
 
 #pragma endregion
 
@@ -81,6 +95,7 @@ void Game::initGame()
 void Game::updateGame(float deltaTime, const InputState& inputState)
 {
 	world.update(deltaTime);
+	physicsWorld.update(deltaTime);
 
 	if (inputState.toggleDebugCamera)
 		debugCameraEnabled = !debugCameraEnabled;
@@ -155,6 +170,7 @@ void Game::processMouseScroll(float yoffset)
 void Game::closeGame()
 {
 	world.clear();
+	physicsWorld.shutdown();
 	cubeMesh.reset();
 	shader.reset();
 	renderer.reset();

@@ -4,6 +4,7 @@
 #include "material.h"
 #include "playerController.h"
 #include "thirdPersonCamera.h"
+#include "physicsWorld.h"
 
 #include "types/vertex.h"
 #include "types/index.h"
@@ -31,6 +32,7 @@ public:
 
 private:
 	World world;
+	PhysicsWorld physicsWorld;
 	Camera camera{ glm::vec3(18.0f, 16.0f, 12.0f), glm::vec3(0.0f, 1.0f, 0.0f), -146.3f, -36.5f };
 
 	std::unique_ptr<Mesh> cubeMesh;
