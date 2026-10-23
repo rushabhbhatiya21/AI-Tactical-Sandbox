@@ -55,3 +55,8 @@ glm::mat4 ThirdPersonCamera::getProjectionMatrix() const
 {
 	return glm::perspective(glm::radians(fov), aspectRatio, nearPlane, farPlane);
 }
+
+glm::vec3 ThirdPersonCamera::getPosition() const
+{
+	return position;
+}

@@ -55,6 +55,7 @@ public:
 
     glm::mat4 getViewMatrix() const override;
     glm::mat4 getProjectionMatrix() const override;
+    glm::vec3 getPosition() const override;
     glm::mat4 calculate_lookAt_matrix(glm::vec3 position, glm::vec3 target, glm::vec3 worldUp) const;
     void processMouseMovement(float xoffset, float yoffset, GLboolean constrainPitch = true);
     void processKeyboard(Camera_Movement direction, float deltaTime);
@@ -64,7 +65,7 @@ public:
 private:
     float aspectRatio = 16.0f / 9.0f;
     float nearPlane = 0.1f;
-    float farPlane = 100.0f;
+    float farPlane = 200.0f;
 
     // calculates the front vector from the Camera's (updated) Euler Angles
     void updateCameraVectors();

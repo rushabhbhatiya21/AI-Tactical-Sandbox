@@ -16,6 +16,7 @@ public:
 	// interface methods
 	glm::mat4 getViewMatrix() const override;
 	glm::mat4 getProjectionMatrix() const override;
+	glm::vec3 getPosition() const override;
 
 private:
 	GameObject& player;
@@ -32,5 +33,5 @@ private:
 	float fov = 45.0f;
 	float aspectRatio = 16.0f / 9.0f;
 	float nearPlane = 0.1f;
-	float farPlane = 100.0f;
+	float farPlane = 200.0f;
 };
