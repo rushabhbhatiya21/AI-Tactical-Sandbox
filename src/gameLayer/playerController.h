@@ -1,15 +1,32 @@
 #pragma once
 #include "gameObject.h"
 
+namespace JPH
+{
+	class CharacterVirtual;
+}
+
 class InputState;
+class PhysicsWorld;
 
 class PlayerController
 {
 public:
-	PlayerController(GameObject& player);
+	PlayerController(GameObject& player, PhysicsWorld& physicsWorld);
+	~PlayerController();
+
+	PlayerController(const PlayerController&) = delete;
+	PlayerController& operator=(const PlayerController&) = delete;
+
 	void update(float dt, const InputState& input, float yaw);
 
 private:
 	GameObject& player;
+	PhysicsWorld& physicsWorld;
+
+	// Jolt ref-counts characters; we hold one reference (AddRef in the constructor, Release in the destructor)
+	JPH::CharacterVirtual* character = nullptr;
+
 	float movementSpeed = 5.0f;
+	float halfHeight = 0.0f;
 };

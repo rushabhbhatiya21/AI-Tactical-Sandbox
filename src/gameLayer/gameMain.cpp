@@ -81,11 +81,12 @@ void Game::initGame()
 #pragma region player
 
 	GameObject& player = world.createGameObject();
-	player.transform.position = glm::vec3(0.0f, 1.0f, 4.0f);
+	// Centre is half the height above the ground's top (y = 0.2), so the feet start on the floor
+	player.transform.position = glm::vec3(0.0f, 1.1f, 4.0f);
 	player.transform.scale = glm::vec3(0.6f, 1.8f, 0.6f);
 	player.renderComponent = std::make_unique<RenderComponent>(*cubeMesh, playerMaterial);
 
-	playerController = std::make_unique<PlayerController>(player);
+	playerController = std::make_unique<PlayerController>(player, physicsWorld);
 
 #pragma endregion
 
@@ -169,6 +170,8 @@ void Game::processMouseScroll(float yoffset)
 
 void Game::closeGame()
 {
+	playerController.reset();
+	thirdPersonCamera.reset();
 	world.clear();
 	physicsWorld.shutdown();
 	cubeMesh.reset();

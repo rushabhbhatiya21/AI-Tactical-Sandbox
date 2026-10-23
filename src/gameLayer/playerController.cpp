@@ -1,14 +1,51 @@
-﻿#include "playerController.h"
+﻿// Jolt.h must be included before any other Jolt header
+#include <Jolt/Jolt.h>
+#include <Jolt/Core/TempAllocator.h>
+#include <Jolt/Physics/PhysicsSystem.h>
+#include <Jolt/Physics/Character/CharacterVirtual.h>
+#include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
+#include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
+
+#include "playerController.h"
+#include "physicsWorld.h"
+#include "physicsLayers.h"
 #include "input/inputState.h"
 
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <glm/trigonometric.hpp>
+#include <algorithm>
 #include <cmath>
 
-PlayerController::PlayerController(GameObject& player)
-	: player(player)
+PlayerController::PlayerController(GameObject& player, PhysicsWorld& physicsWorld)
+	: player(player), physicsWorld(physicsWorld)
 {
+	// Capsule that fits the player's box: radius from the footprint, total height from scale.y
+	const float radius = 0.5f * std::max(player.transform.scale.x, player.transform.scale.z);
+	halfHeight = 0.5f * player.transform.scale.y;
+	const float cylinderHalfHeight = std::max(0.0f, halfHeight - radius);
+
+	// Shift the capsule up so the character's position is at its feet
+	JPH::RefConst<JPH::Shape> shape = JPH::RotatedTranslatedShapeSettings(
+		JPH::Vec3(0.0f, halfHeight, 0.0f),
+		JPH::Quat::sIdentity(),
+		new JPH::CapsuleShape(cylinderHalfHeight, radius)).Create().Get();
+
+	JPH::Ref<JPH::CharacterVirtualSettings> settings = new JPH::CharacterVirtualSettings();
+	settings->mShape = shape;
+	settings->mMaxSlopeAngle = JPH::DegreesToRadians(45.0f);
+	// Only contacts below the bottom sphere's centre count as standing on something
+	settings->mSupportingVolume = JPH::Plane(JPH::Vec3::sAxisY(), -radius);
+
+	const glm::vec3 feet = player.transform.position - glm::vec3(0.0f, halfHeight, 0.0f);
+	character = new JPH::CharacterVirtual(settings, JPH::RVec3(feet.x, feet.y, feet.z),
+		JPH::Quat::sIdentity(), 0, &physicsWorld.getPhysicsSystem());
+	character->AddRef();
+}
+
+PlayerController::~PlayerController()
+{
+	if (character)
+		character->Release();
 }
 
 void PlayerController::update(float dt, const InputState& input, float cameraYawDegrees)
@@ -30,10 +67,6 @@ void PlayerController::update(float dt, const InputState& input, float cameraYaw
 	if (input.moveRight)    rightInput += 1.0f;
 	if (input.moveLeft)     rightInput -= 1.0f;
 
-	// No movement input: keep the current position.
-	if (forwardInput == 0.0f && rightInput == 0.0f)
-		return;
-
 	// 3. Camera's horizontal basis, matching ThirdPersonCamera::update().
 	//    Camera looks along (cos yaw, 0, sin yaw); its right is (-sin yaw, 0, cos yaw).
 	float yawRad = glm::radians(cameraYawDegrees);
@@ -42,8 +75,40 @@ void PlayerController::update(float dt, const InputState& input, float cameraYaw
 
 	// 4. Combine into a world-space direction. Normalize so diagonals aren't faster.
 	glm::vec3 worldMovement = camForward * forwardInput + camRight * rightInput;
-	worldMovement = glm::normalize(worldMovement);
+	if (forwardInput != 0.0f || rightInput != 0.0f)
+		worldMovement = glm::normalize(worldMovement);
 
-	// 5. Move the player (strafing; facing is driven by the mouse, not movement).
-	player.transform.position += worldMovement * movementSpeed * dt;
+	// 5. Build the character's velocity: keep falling speed while airborne, reset it once grounded.
+	JPH::PhysicsSystem& physicsSystem = physicsWorld.getPhysicsSystem();
+	const JPH::Vec3 gravity = physicsSystem.GetGravity();
+
+	character->UpdateGroundVelocity();
+	const JPH::Vec3 currentVerticalVelocity(0.0f, character->GetLinearVelocity().GetY(), 0.0f);
+	const JPH::Vec3 groundVelocity = character->GetGroundVelocity();
+	const bool onGround = character->GetGroundState() == JPH::CharacterVirtual::EGroundState::OnGround;
+
+	JPH::Vec3 newVelocity;
+	if (onGround && currentVerticalVelocity.GetY() - groundVelocity.GetY() < 0.1f)
+		newVelocity = groundVelocity;
+	else
+		newVelocity = currentVerticalVelocity;
+
+	newVelocity += gravity * dt;
+	newVelocity += JPH::Vec3(worldMovement.x, 0.0f, worldMovement.z) * movementSpeed;
+	character->SetLinearVelocity(newVelocity);
+
+	// 6. Move the character; Jolt slides it along walls, handles steps and keeps it on the floor.
+	JPH::CharacterVirtual::ExtendedUpdateSettings updateSettings;
+	character->ExtendedUpdate(dt, gravity, updateSettings,
+		physicsSystem.GetDefaultBroadPhaseLayerFilter(Layers::MOVING),
+		physicsSystem.GetDefaultLayerFilter(Layers::MOVING),
+		JPH::BodyFilter(), JPH::ShapeFilter(),
+		physicsWorld.getTempAllocator());
+
+	// 7. Copy the result back for rendering (the transform is the centre, the character is at the feet).
+	const JPH::RVec3 feet = character->GetPosition();
+	player.transform.position = glm::vec3(
+		static_cast<float>(feet.GetX()),
+		static_cast<float>(feet.GetY()) + halfHeight,
+		static_cast<float>(feet.GetZ()));
 }
