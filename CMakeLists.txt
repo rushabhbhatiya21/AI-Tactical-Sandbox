@@ -38,6 +38,28 @@ set(GLM_TEST_ENABLE OFF CACHE INTERNAL "Disable GLM test bench")
 
 FetchContent_MakeAvailable(glfw)
 
+# 3. Fetch Jolt Physics. Its CMakeLists lives in the Build/ subfolder.
+FetchContent_Declare(
+    JoltPhysics
+    GIT_REPOSITORY https://github.com/jrouwe/JoltPhysics.git
+    GIT_TAG        v5.2.0
+    GIT_SHALLOW    TRUE
+    SOURCE_SUBDIR  Build
+)
+
+# Library only: no samples, tests or viewer
+set(TARGET_UNIT_TESTS OFF CACHE BOOL "Jolt lib only" FORCE)
+set(TARGET_HELLO_WORLD OFF CACHE BOOL "Jolt lib only" FORCE)
+set(TARGET_PERFORMANCE_TEST OFF CACHE BOOL "Jolt lib only" FORCE)
+set(TARGET_SAMPLES OFF CACHE BOOL "Jolt lib only" FORCE)
+set(TARGET_VIEWER OFF CACHE BOOL "Jolt lib only" FORCE)
+set(ENABLE_ALL_WARNINGS OFF CACHE BOOL "Don't treat Jolt warnings as errors" FORCE)
+# Match our static runtime (/MT, /MTd) and AVX2 settings above
+set(USE_STATIC_MSVC_RUNTIME_LIBRARY ON CACHE BOOL "Jolt static CRT" FORCE)
+set(USE_AVX2 ON CACHE BOOL "Jolt AVX2" FORCE)
+
+FetchContent_MakeAvailable(JoltPhysics)
+
 # MY_SOURCES is defined to be a list of all the source files for my game 
 # DON'T ADD THE SOURCES BY HAND, they are already added with this macro
 file(GLOB_RECURSE MY_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
@@ -98,8 +120,11 @@ target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC thirdParty/glad/includ
 target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC thirdParty/stb)
 target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC thirdParty/glm-0.9.8.5/glm)
 
-# Link GLFW library statically
+# Link GLFW and Jolt statically
+# (Jolt exports its JPH_* compile definitions through the target, so our code is
+#  compiled with the same settings as the library; a mismatch causes subtle crashes)
 target_link_libraries("${CMAKE_PROJECT_NAME}"
     PRIVATE
 		glfw
+		Jolt
 )
