@@ -3,6 +3,9 @@
 #include <assert.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 
 #include "gameMain.h"
 #include "input/inputState.h"
@@ -16,6 +19,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window, InputState& inputState, KeyEdgeState& edges);
+void drawFpsOverlay(float fps);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -29,6 +33,11 @@ bool firstMouse = true;
 // time
 float deltaTime = 0.0f;	// Time between current frame and last frame
 float lastFrame = 0.0f; // Time of last frame
+
+// fps: averaged over a short window so the number is readable
+float fpsTimer = 0.0f;
+int fpsFrames = 0;
+float fps = 0.0f;
 
 int main()
 {
@@ -88,6 +97,24 @@ int main()
 #pragma endregion
 
 
+#pragma region init imgui
+
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	io.IniFilename = nullptr; // don't write imgui.ini next to the exe
+	// Overlay is display-only for now; the cursor is captured for mouse aiming
+	io.ConfigFlags |= ImGuiConfigFlags_NoMouse | ImGuiConfigFlags_NoMouseCursorChange;
+
+	// install_callbacks = true chains to the GLFW callbacks we registered above
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplOpenGL3_Init("#version 330");
+
+	std::cout << "[INFO] ImGui initialized" << std::endl;
+
+#pragma endregion
+
+
 #pragma region init game
 
 	Game game;
@@ -108,6 +135,15 @@ int main()
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
+		fpsTimer += deltaTime;
+		++fpsFrames;
+		if (fpsTimer >= 0.5f)
+		{
+			fps = fpsFrames / fpsTimer;
+			fpsTimer = 0.0f;
+			fpsFrames = 0;
+		}
+
 		// input
 		// -----
 		InputState inputState;
@@ -121,6 +157,17 @@ int main()
 		// update game here
 		game.updateGame(deltaTime, inputState);
 
+		// debug ui, drawn on top of the scene
+		// -----------------------------------
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+
+		drawFpsOverlay(fps);
+
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 		// -------------------------------------------------------------------------------
 		glfwSwapBuffers(window);
@@ -133,6 +180,11 @@ int main()
 #pragma region shutdown
 
 	game.closeGame();
+
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
+
 	glfwTerminate();
 	std::cout << "[INFO] Application shutting down" << std::endl;
 
@@ -140,6 +192,25 @@ int main()
 
 	return 0;
 }
+
+#pragma region debug ui
+
+void drawFpsOverlay(float fps)
+{
+	const ImGuiWindowFlags flags =
+		ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
+		ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing |
+		ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoInputs;
+
+	ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f));
+	ImGui::SetNextWindowBgAlpha(0.35f);
+	ImGui::Begin("##fpsOverlay", nullptr, flags);
+	ImGui::Text("%.0f FPS", fps);
+	ImGui::Text("%.2f ms", fps > 0.0f ? 1000.0f / fps : 0.0f);
+	ImGui::End();
+}
+
+#pragma endregion
 
 #pragma region callbacks
 
