@@ -188,12 +188,19 @@ void PhysicsWorld::shutdown()
 	initialized = false;
 }
 
-void PhysicsWorld::addStaticBox(const glm::vec3& center, const glm::vec3& halfExtents)
+void PhysicsWorld::addStaticBox(const glm::vec3& center, const glm::vec3& halfExtents, const glm::vec3& rotationDegrees)
 {
+	// Transform::getModelMatrix() builds Rx * Ry * Rz, so compose the quaternion in the same order,
+	// otherwise the collider won't line up with what's drawn.
+	const JPH::Quat rotation =
+		JPH::Quat::sRotation(JPH::Vec3::sAxisX(), JPH::DegreesToRadians(rotationDegrees.x)) *
+		JPH::Quat::sRotation(JPH::Vec3::sAxisY(), JPH::DegreesToRadians(rotationDegrees.y)) *
+		JPH::Quat::sRotation(JPH::Vec3::sAxisZ(), JPH::DegreesToRadians(rotationDegrees.z));
+
 	JPH::BodyCreationSettings settings(
 		new JPH::BoxShape(JPH::Vec3(halfExtents.x, halfExtents.y, halfExtents.z)),
 		JPH::RVec3(center.x, center.y, center.z),
-		JPH::Quat::sIdentity(),
+		rotation.Normalized(),
 		JPH::EMotionType::Static,
 		Layers::NON_MOVING);
 
