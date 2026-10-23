@@ -22,68 +22,26 @@ void Game::initGame()
 	renderer = std::make_unique<Renderer>();
 	physicsWorld.init();
 
-	// The cube mesh is a unit cube, so a collider's half-extents are half the object's scale
-	auto addStaticCollider = [this](const GameObject& gameObject)
+	// Every arena piece is the unit cube scaled to its size, so the collider's half-extents are half of it
+	arenaLayout = buildTestArena();
+	for (const ArenaPiece& piece : arenaLayout.pieces)
 	{
-		physicsWorld.addStaticBox(gameObject.transform.position, gameObject.transform.scale * 0.5f);
-	};
+		GameObject& gameObject = world.createGameObject();
+		gameObject.transform.position = piece.center;
+		gameObject.transform.scale = piece.size;
+		gameObject.transform.rotation = piece.rotationDegrees;
+		gameObject.renderComponent = std::make_unique<RenderComponent>(*cubeMesh, materialFor(piece.kind));
 
-#pragma region ground & walls
-
-	GameObject& ground = world.createGameObject();
-	ground.transform.scale = glm::vec3(20.0f, 0.2f, 20.0f);
-	ground.transform.position.y = 0.1f;
-	ground.renderComponent = std::make_unique<RenderComponent>(*cubeMesh, groundMaterial);
-	addStaticCollider(ground);
-
-	GameObject& northWall = world.createGameObject();
-	northWall.transform.scale = glm::vec3(20.0f, 3.0f, 1.0f);
-	northWall.transform.position = glm::vec3(0.0f, 1.5f, -10.0f);
-	northWall.renderComponent = std::make_unique<RenderComponent>(*cubeMesh, wallMaterial);
-	addStaticCollider(northWall);
-
-	GameObject& southWall = world.createGameObject();
-	southWall.transform.scale = glm::vec3(20.0f, 3.0f, 1.0f);
-	southWall.transform.position = glm::vec3(0.0f, 1.5f, 10.0f);
-	southWall.renderComponent = std::make_unique<RenderComponent>(*cubeMesh, wallMaterial);
-	addStaticCollider(southWall);
-
-	GameObject& easthWall = world.createGameObject();
-	easthWall.transform.scale = glm::vec3(1.0f, 3.0f, 20.0f);
-	easthWall.transform.position = glm::vec3(10.0f, 1.5f, 0.0f);
-	easthWall.renderComponent = std::make_unique<RenderComponent>(*cubeMesh, wallMaterial);
-	addStaticCollider(easthWall);
-
-	GameObject& westhWall = world.createGameObject();
-	westhWall.transform.scale = glm::vec3(1.0f, 3.0f, 20.0f);
-	westhWall.transform.position = glm::vec3(-10.0f, 1.5f, 0.0f);
-	westhWall.renderComponent = std::make_unique<RenderComponent>(*cubeMesh, wallMaterial);
-	addStaticCollider(westhWall);
-
-#pragma endregion
-
-#pragma region obstacles
-
-	GameObject& obstacleA = world.createGameObject();
-	obstacleA.transform.position = glm::vec3(-4.0f, 1.2f, -2.0f);
-	obstacleA.transform.scale = glm::vec3(2.0f, 2.0f, 1.0f);
-	obstacleA.renderComponent = std::make_unique<RenderComponent>(*cubeMesh, obstacle1Material);
-	addStaticCollider(obstacleA);
-
-	GameObject& obstacleB = world.createGameObject();
-	obstacleB.transform.position = glm::vec3(3.0f, 0.8f, -3.0f);
-	obstacleB.transform.scale = glm::vec3(3.0f, 1.2f, 1.5f);
-	obstacleB.renderComponent = std::make_unique<RenderComponent>(*cubeMesh, obstacle2Material);
-	addStaticCollider(obstacleB);
-
-#pragma endregion
+		physicsWorld.addStaticBox(piece.center, piece.size * 0.5f, piece.rotationDegrees);
+	}
 
 #pragma region player
 
 	GameObject& player = world.createGameObject();
-	// Centre is half the height above the ground's top (y = 0.2), so the feet start on the floor
-	player.transform.position = glm::vec3(0.0f, 1.1f, 4.0f);
+	// Spawn markers are at feet level; the transform is the centre of the box
 	player.transform.scale = glm::vec3(0.6f, 1.8f, 0.6f);
+	player.transform.position = arenaLayout.findMarker(ArenaMarkerKind::PlayerSpawn)
+		+ glm::vec3(0.0f, player.transform.scale.y * 0.5f, 0.0f);
 	player.renderComponent = std::make_unique<RenderComponent>(*cubeMesh, playerMaterial);
 
 	playerController = std::make_unique<PlayerController>(player, physicsWorld);
@@ -123,14 +81,16 @@ void Game::updateGame(float deltaTime, const InputState& inputState)
 	}
 
 	const std::vector<std::unique_ptr<GameObject>>& gameObjects = world.getGameObjects();
+	const ICamera& activeCamera = debugCameraEnabled ? static_cast<const ICamera&>(camera) : *thirdPersonCamera;
 	renderer->beginFrame();
 	shader->use();
 
-	shader->setVec3("light.position", glm::vec3(5.0f, 8.0f, 5.0f));
+	// High above the arena so the whole 60 x 60 m area is lit from a similar angle
+	shader->setVec3("light.position", glm::vec3(15.0f, 60.0f, 25.0f));
 	shader->setVec3("light.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
 	shader->setVec3("light.diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
 	shader->setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
-	shader->setVec3("viewPos", camera.Position);
+	shader->setVec3("viewPos", activeCamera.getPosition());
 
 	for (const auto& gameObject : gameObjects)
 	{
@@ -139,10 +99,7 @@ void Game::updateGame(float deltaTime, const InputState& inputState)
 		shader->setVec3("material.diffuse", gameObject->renderComponent->material.diffuse);
 		shader->setVec3("material.specular", gameObject->renderComponent->material.specular);
 		shader->setFloat("material.shininess", gameObject->renderComponent->material.shininess);
-		if (debugCameraEnabled)
-			renderer->draw(gameObject->renderComponent->mesh, gameObject->transform, camera, *shader);
-		else
-			renderer->draw(gameObject->renderComponent->mesh, gameObject->transform, *thirdPersonCamera, *shader);
+		renderer->draw(gameObject->renderComponent->mesh, gameObject->transform, activeCamera, *shader);
 	}
 
 	renderer->endFrame();
@@ -166,6 +123,21 @@ void Game::processMouseScroll(float yoffset)
 {
 	if (debugCameraEnabled)
 		camera.processMouseScroll(yoffset);
+}
+
+const Material& Game::materialFor(ArenaPieceKind kind) const
+{
+	switch (kind)
+	{
+	case ArenaPieceKind::Floor:     return groundMaterial;
+	case ArenaPieceKind::Wall:      return wallMaterial;
+	case ArenaPieceKind::LowCover:  return lowCoverMaterial;
+	case ArenaPieceKind::HighCover: return highCoverMaterial;
+	case ArenaPieceKind::Platform:  return platformMaterial;
+	case ArenaPieceKind::Ramp:
+	case ArenaPieceKind::Stairs:    return rampMaterial;
+	}
+	return wallMaterial;
 }
 
 void Game::closeGame()
