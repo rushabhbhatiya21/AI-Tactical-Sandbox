@@ -29,8 +29,8 @@ public:
 
 	// Adds an immovable box collider. halfExtents is half the box size on each axis.
 	// rotationDegrees uses the same Euler convention as Transform (X, then Y, then Z in the model matrix).
-	void addStaticBox(const glm::vec3& center, const glm::vec3& halfExtents,
-		const glm::vec3& rotationDegrees = glm::vec3(0.0f));
+	void addStaticBox(const glm::vec3& center, const glm::vec3& halfExtents, const glm::vec3& rotationDegrees = glm::vec3(0.0f));
+	bool hasLineOfSight(const glm::vec3 origin, const glm::vec3 target);
 
 	JPH::PhysicsSystem& getPhysicsSystem();
 	JPH::TempAllocatorImpl& getTempAllocator();

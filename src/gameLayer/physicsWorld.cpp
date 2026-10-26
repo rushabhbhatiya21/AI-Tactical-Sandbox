@@ -8,6 +8,9 @@
 #include <Jolt/Physics/PhysicsSystem.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
+#include <Jolt/Physics/Collision/RayCast.h>
+#include <Jolt/Physics/Collision/CastResult.h>
+#include <Jolt/Physics/Collision/CollisionCollector.h>
 
 #include "physicsWorld.h"
 #include "physicsLayers.h"
@@ -70,6 +73,16 @@ public:
 		case Layers::MOVING:     return true;
 		default:                 return false;
 		}
+	}
+};
+
+// LOS query considers static arena geometry only, ignoring moving objects
+class StaticOnlyObjectLayerFilter final : public JPH::ObjectLayerFilter
+{
+public:
+	bool ShouldCollide(JPH::ObjectLayer layer) const override
+	{
+		return layer == Layers::NON_MOVING;
 	}
 };
 
@@ -206,6 +219,36 @@ void PhysicsWorld::addStaticBox(const glm::vec3& center, const glm::vec3& halfEx
 
 	JPH::BodyID id = physicsSystem->GetBodyInterface().CreateAndAddBody(settings, JPH::EActivation::DontActivate);
 	bodyIds.push_back(id.GetIndexAndSequenceNumber());
+}
+
+bool PhysicsWorld::hasLineOfSight(const glm::vec3 origin, const glm::vec3 target)
+{
+	if (!initialized)
+		return false;
+
+	const glm::vec3 direction = target - origin;
+
+	// A zero-length ray has no obstruction to test.
+	if (glm::dot(direction, direction) < 1e-6f)
+		return true;
+
+	const JPH::RRayCast ray(
+		JPH::RVec3(origin.x, origin.y, origin.z),
+		JPH::Vec3(direction.x, direction.y, direction.z)
+	);
+
+	JPH::RayCastResult hit;
+
+	static const StaticOnlyObjectLayerFilter staticFilter;
+
+	const bool blocked = physicsSystem->GetNarrowPhaseQuery().CastRay(
+		ray, 
+		hit, 
+		physicsSystem->GetDefaultBroadPhaseLayerFilter(Layers::MOVING),
+		staticFilter
+	);
+
+	return !blocked;
 }
 
 JPH::PhysicsSystem& PhysicsWorld::getPhysicsSystem()

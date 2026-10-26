@@ -1,5 +1,4 @@
 #include "gameMain.h"
-#include "gameMain.h"
 #include "input/inputState.h"
 
 #include <mesh.h>
@@ -7,6 +6,8 @@
 #include <shader.h>
 #include <renderer.h>
 #include <builders/cubeMeshBuilder.h>
+
+#include <physicsWorldTests.h>
 
 Game::Game() = default;
 Game::~Game() = default;
@@ -49,6 +50,8 @@ void Game::initGame()
 #pragma endregion
 
 	thirdPersonCamera = std::make_unique<ThirdPersonCamera>(player);
+
+	runLineOfSightTests(physicsWorld);
 }
 
 void Game::updateGame(float deltaTime, const InputState& inputState)
