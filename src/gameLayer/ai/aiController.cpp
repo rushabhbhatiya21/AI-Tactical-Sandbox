@@ -15,8 +15,8 @@
 #include <physicsWorld.h>
 #include <physicsLayers.h>
 
-AIController::AIController(GameObject& agent, PhysicsWorld& world)
-	: aiAgent(agent), physicsWorld(world)
+AIController::AIController(GameObject& agent, PhysicsWorld& world, JPH::CharacterVsCharacterCollisionSimple& collision)
+	: aiAgent(agent), physicsWorld(world), characterCollision(collision)
 {
 	const float radius = 0.5f * std::max(aiAgent.transform.scale.x, aiAgent.transform.scale.z);
 	halfHeight = 0.5f * aiAgent.transform.scale.y;
@@ -42,13 +42,18 @@ AIController::AIController(GameObject& agent, PhysicsWorld& world)
 		0,
 		&physicsWorld.getPhysicsSystem()
 	);
+
 	character->AddRef();
+	character->SetCharacterVsCharacterCollision(&characterCollision);
 }
 
 AIController::~AIController()
 {
 	if (character)
+	{
+		characterCollision.Remove(character);
 		character->Release();
+	}
 }
 
 void AIController::update(float dt)
@@ -93,4 +98,9 @@ void AIController::update(float dt)
 		static_cast<float>(feet.GetY()) + halfHeight, 
 		static_cast<float>(feet.GetZ())
 	);
+}
+
+JPH::CharacterVirtual* AIController::getCharacter() const
+{
+	return character;
 }

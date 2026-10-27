@@ -11,17 +11,19 @@ class PhysicsWorld;
 class AIController
 {
 public:
-	AIController(GameObject& aiAgent, PhysicsWorld& world);
+	AIController(GameObject& aiAgent, PhysicsWorld& world, JPH::CharacterVsCharacterCollisionSimple& characterCollision);
 	~AIController();
 
 	AIController(const AIController&) = delete;
 	AIController& operator=(const AIController&) = delete;
 
 	void update(float dt);
+	JPH::CharacterVirtual* getCharacter() const;
 
 private:
 	GameObject& aiAgent;
 	PhysicsWorld& physicsWorld;
+	JPH::CharacterVsCharacterCollisionSimple& characterCollision;
 
 	JPH::CharacterVirtual* character = nullptr;
 

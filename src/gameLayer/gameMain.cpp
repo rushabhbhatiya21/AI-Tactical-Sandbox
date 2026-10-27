@@ -44,7 +44,8 @@ void Game::initGame()
 	player.transform.position = arenaLayout.findMarker(ArenaMarkerKind::PlayerSpawn) + glm::vec3(0.0f, player.transform.scale.y * 0.5f, 0.0f);
 	player.renderComponent = std::make_unique<RenderComponent>(*cubeMesh, playerMaterial);
 
-	playerController = std::make_unique<PlayerController>(player, physicsWorld);
+	playerController = std::make_unique<PlayerController>(player, physicsWorld, vCharacterCollision);
+	thirdPersonCamera = std::make_unique<ThirdPersonCamera>(player);
 
 #pragma endregion
 
@@ -55,11 +56,13 @@ void Game::initGame()
 	aIAgent.transform.position = arenaLayout.findMarker(ArenaMarkerKind::EnemySpawn) + glm::vec3(0.0f, aIAgent.transform.scale.y * 0.5f, 0.0f);
 	aIAgent.renderComponent = std::make_unique<RenderComponent>(*cubeMesh, enemyMaterial);
 
-	aiController = std::make_unique<AIController>(aIAgent, physicsWorld);
+	aiController = std::make_unique<AIController>(aIAgent, physicsWorld, vCharacterCollision);
 
 #pragma endregion
 
-	thirdPersonCamera = std::make_unique<ThirdPersonCamera>(player);
+
+	vCharacterCollision.Add(playerController->getCharacter());
+	vCharacterCollision.Add(aiController->getCharacter());
 
 	runLineOfSightTests(physicsWorld);
 }

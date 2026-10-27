@@ -1,6 +1,8 @@
 #pragma once
 #include <memory>
 #include <vector>
+#include <Jolt/Jolt.h>
+#include <Jolt/Physics/Character/CharacterVirtual.h>
 
 #include "world.h"
 #include "camera.h"
@@ -40,6 +42,7 @@ private:
 	ArenaLayout arenaLayout;   // kept after init so the AI can read markers and piece kinds later
 	// Debug camera starts above the south edge, looking down over the whole arena
 	Camera camera{ glm::vec3(0.0f, 40.0f, 48.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, -42.0f };
+	JPH::CharacterVsCharacterCollisionSimple vCharacterCollision;
 
 	std::unique_ptr<Mesh> cubeMesh;
 	std::unique_ptr<Shader> shader;

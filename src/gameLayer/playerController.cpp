@@ -16,8 +16,8 @@
 #include "physicsLayers.h"
 #include "input/inputState.h"
 
-PlayerController::PlayerController(GameObject& player, PhysicsWorld& physicsWorld)
-	: player(player), physicsWorld(physicsWorld)
+PlayerController::PlayerController(GameObject& player, PhysicsWorld& world, JPH::CharacterVsCharacterCollisionSimple& collision)
+	: player(player), physicsWorld(world), characterCollision(collision)
 {
 	// Capsule that fits the player's box: radius from the footprint, total height from scale.y
 	const float radius = 0.5f * std::max(player.transform.scale.x, player.transform.scale.z);
@@ -37,15 +37,25 @@ PlayerController::PlayerController(GameObject& player, PhysicsWorld& physicsWorl
 	settings->mSupportingVolume = JPH::Plane(JPH::Vec3::sAxisY(), -radius);
 
 	const glm::vec3 feet = player.transform.position - glm::vec3(0.0f, halfHeight, 0.0f);
-	character = new JPH::CharacterVirtual(settings, JPH::RVec3(feet.x, feet.y, feet.z),
-		JPH::Quat::sIdentity(), 0, &physicsWorld.getPhysicsSystem());
+	character = new JPH::CharacterVirtual(
+		settings, 
+		JPH::RVec3(feet.x, feet.y, feet.z),
+		JPH::Quat::sIdentity(),
+		0, 
+		&physicsWorld.getPhysicsSystem()
+	);
+
 	character->AddRef();
+	character->SetCharacterVsCharacterCollision(&characterCollision);
 }
 
 PlayerController::~PlayerController()
 {
 	if (character)
+	{
+		characterCollision.Remove(character);
 		character->Release();
+	}
 }
 
 void PlayerController::update(float dt, const InputState& input, float cameraYawDegrees)
@@ -111,4 +121,9 @@ void PlayerController::update(float dt, const InputState& input, float cameraYaw
 		static_cast<float>(feet.GetX()),
 		static_cast<float>(feet.GetY()) + halfHeight,
 		static_cast<float>(feet.GetZ()));
+}
+
+JPH::CharacterVirtual* PlayerController::getCharacter() const
+{
+	return character;
 }
