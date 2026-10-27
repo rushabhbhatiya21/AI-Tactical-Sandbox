@@ -56,7 +56,7 @@ void Game::initGame()
 	aIAgent.transform.position = arenaLayout.findMarker(ArenaMarkerKind::EnemySpawn) + glm::vec3(0.0f, aIAgent.transform.scale.y * 0.5f, 0.0f);
 	aIAgent.renderComponent = std::make_unique<RenderComponent>(*cubeMesh, enemyMaterial);
 
-	aiController = std::make_unique<AIController>(aIAgent, physicsWorld, vCharacterCollision);
+	aiController = std::make_unique<AIController>(aIAgent, player, physicsWorld, vCharacterCollision);
 
 #pragma endregion
 
@@ -166,4 +166,9 @@ void Game::closeGame()
 	cubeMesh.reset();
 	shader.reset();
 	renderer.reset();
+}
+
+AIDebugInfo Game::getAIDebugInfo() const
+{
+	return aiController->getDebugInfo();
 }

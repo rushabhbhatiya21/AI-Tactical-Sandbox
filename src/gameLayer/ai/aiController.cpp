@@ -15,8 +15,8 @@
 #include <physicsWorld.h>
 #include <physicsLayers.h>
 
-AIController::AIController(GameObject& agent, PhysicsWorld& world, JPH::CharacterVsCharacterCollisionSimple& collision)
-	: aiAgent(agent), physicsWorld(world), characterCollision(collision)
+AIController::AIController(GameObject& agent, GameObject& player, PhysicsWorld& world, JPH::CharacterVsCharacterCollisionSimple& collision)
+	: aiAgent(agent), player(player), physicsWorld(world), characterCollision(collision)
 {
 	const float radius = 0.5f * std::max(aiAgent.transform.scale.x, aiAgent.transform.scale.z);
 	halfHeight = 0.5f * aiAgent.transform.scale.y;
@@ -103,4 +103,30 @@ void AIController::update(float dt)
 JPH::CharacterVirtual* AIController::getCharacter() const
 {
 	return character;
+}
+
+bool AIController::canSeePlayer() const
+{
+	if (!isPlayerInDetectionRange()) return false;
+	glm::vec3 agentEyePosition = aiAgent.transform.position;
+	agentEyePosition.y += 0.5f;
+	glm::vec3 playerEyePosition = player.transform.position;
+	playerEyePosition.y += 0.5f;
+	return physicsWorld.hasLineOfSight(agentEyePosition, playerEyePosition);
+}
+
+AIDebugInfo AIController::getDebugInfo() const
+{
+	AIDebugInfo info;
+	info.distanceToPlayer = glm::length(player.transform.position - aiAgent.transform.position);
+	info.detectionRange = detectionRange;
+	info.playerInRange = isPlayerInDetectionRange();
+	info.canSeePlayer = canSeePlayer();
+	return info;
+}
+
+bool AIController::isPlayerInDetectionRange() const
+{
+	glm::vec3 dist = player.transform.position - aiAgent.transform.position;
+	return glm::dot(dist, dist) <= detectionRange * detectionRange;
 }

@@ -103,6 +103,10 @@ void PlayerController::update(float dt, const InputState& input, float cameraYaw
 	else
 		newVelocity = currentVerticalVelocity;
 
+	// Jump only from the ground, so holding or mashing space in the air does nothing
+	if (onGround && input.jump)
+		newVelocity += JPH::Vec3(0.0f, jumpSpeed, 0.0f);
+
 	newVelocity += gravity * dt;
 	newVelocity += JPH::Vec3(worldMovement.x, 0.0f, worldMovement.z) * movementSpeed;
 	character->SetLinearVelocity(newVelocity);

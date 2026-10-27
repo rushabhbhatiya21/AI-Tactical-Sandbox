@@ -34,6 +34,9 @@ public:
 	void processMouseScroll(float yoffset);
 	void closeGame();
 
+	// for debugging
+	AIDebugInfo getAIDebugInfo() const;
+
 private:
 	const Material& materialFor(ArenaPieceKind kind) const;
 

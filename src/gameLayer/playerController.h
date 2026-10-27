@@ -30,5 +30,6 @@ private:
 	JPH::CharacterVirtual* character = nullptr;
 
 	float movementSpeed = 5.0f;
+	float jumpSpeed = 5.0f;    // initial upward speed; peak height = v^2 / 2g, about 1.3 m
 	float halfHeight = 0.0f;
 };
