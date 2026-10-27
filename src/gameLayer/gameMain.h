@@ -1,17 +1,18 @@
 #pragma once
-#include "world.h"
-#include "camera.h"
-#include "material.h"
-#include "playerController.h"
-#include "thirdPersonCamera.h"
-#include "physicsWorld.h"
-#include "arenaLayout.h"
-
-#include "types/vertex.h"
-#include "types/index.h"
-
 #include <memory>
 #include <vector>
+
+#include "world.h"
+#include "camera.h"
+#include "arenaLayout.h"
+#include "physicsWorld.h"
+#include "playerController.h"
+#include "thirdPersonCamera.h"
+#include "ai/aiController.h"
+
+#include <material.h>
+#include <types/vertex.h>
+#include <types/index.h>
 
 class Mesh;
 class Shader;
@@ -45,6 +46,7 @@ private:
 	std::unique_ptr<Renderer> renderer;
 	std::unique_ptr<PlayerController> playerController;
 	std::unique_ptr<ThirdPersonCamera> thirdPersonCamera;
+	std::unique_ptr<AIController> aiController;
 
 	bool debugCameraEnabled = false;
 
@@ -68,4 +70,7 @@ private:
 
 	// Player — muted tactical teal
 	Material playerMaterial{ glm::vec3(0.12f, 0.48f, 0.42f), glm::vec3(0.35f, 0.35f, 0.35f), 32.0f };
+
+	// Enemy — muted tactical red
+	Material enemyMaterial{ glm::vec3(0.65f, 0.16f, 0.14f), glm::vec3(0.35f, 0.35f, 0.35f), 32.0f };
 };

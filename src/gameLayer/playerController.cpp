@@ -6,15 +6,15 @@
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 
-#include "playerController.h"
-#include "physicsWorld.h"
-#include "physicsLayers.h"
-#include "input/inputState.h"
-
 #include <glm/glm.hpp>
 #include <glm/trigonometric.hpp>
 #include <algorithm>
 #include <cmath>
+
+#include "playerController.h"
+#include "physicsWorld.h"
+#include "physicsLayers.h"
+#include "input/inputState.h"
 
 PlayerController::PlayerController(GameObject& player, PhysicsWorld& physicsWorld)
 	: player(player), physicsWorld(physicsWorld)

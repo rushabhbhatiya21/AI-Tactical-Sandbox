@@ -41,11 +41,21 @@ void Game::initGame()
 	GameObject& player = world.createGameObject();
 	// Spawn markers are at feet level; the transform is the centre of the box
 	player.transform.scale = glm::vec3(0.6f, 1.8f, 0.6f);
-	player.transform.position = arenaLayout.findMarker(ArenaMarkerKind::PlayerSpawn)
-		+ glm::vec3(0.0f, player.transform.scale.y * 0.5f, 0.0f);
+	player.transform.position = arenaLayout.findMarker(ArenaMarkerKind::PlayerSpawn) + glm::vec3(0.0f, player.transform.scale.y * 0.5f, 0.0f);
 	player.renderComponent = std::make_unique<RenderComponent>(*cubeMesh, playerMaterial);
 
 	playerController = std::make_unique<PlayerController>(player, physicsWorld);
+
+#pragma endregion
+
+#pragma region EnemyAIAgent
+
+	GameObject& aIAgent = world.createGameObject();
+	aIAgent.transform.scale = glm::vec3(0.6f, 1.8f, 0.6f);
+	aIAgent.transform.position = arenaLayout.findMarker(ArenaMarkerKind::EnemySpawn) + glm::vec3(0.0f, aIAgent.transform.scale.y * 0.5f, 0.0f);
+	aIAgent.renderComponent = std::make_unique<RenderComponent>(*cubeMesh, enemyMaterial);
+
+	aiController = std::make_unique<AIController>(aIAgent, physicsWorld);
 
 #pragma endregion
 
@@ -58,6 +68,7 @@ void Game::updateGame(float deltaTime, const InputState& inputState)
 {
 	world.update(deltaTime);
 	physicsWorld.update(deltaTime);
+	aiController->update(deltaTime);
 
 	if (inputState.toggleDebugCamera)
 		debugCameraEnabled = !debugCameraEnabled;
