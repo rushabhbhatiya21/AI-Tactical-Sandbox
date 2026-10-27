@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
@@ -262,6 +263,56 @@ namespace
 		ImGui::SameLine();
 		ImGui::TextColored(color, "%s", good ? goodText : badText);
 	}
+
+	// "label        value" in the same column as drawStatusRow; the value drops to an
+	// indented line of its own when the label is too long or the value too wide
+	void drawValueRow(const char* label, const char* value)
+	{
+		const float valueColumn = 120.0f;
+		const float rightEdge = ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x;
+		const bool fitsOnOneLine =
+			ImGui::CalcTextSize(label).x + ImGui::GetStyle().ItemSpacing.x <= valueColumn - ImGui::GetCursorPosX() &&
+			valueColumn + ImGui::CalcTextSize(value).x <= rightEdge;
+
+		ImGui::TextColored(debugMuted, "%s", label);
+		if (fitsOnOneLine)
+			ImGui::SameLine(valueColumn);
+		else
+			ImGui::Indent();
+
+		ImGui::TextUnformatted(value);
+
+		if (!fitsOnOneLine)
+			ImGui::Unindent();
+	}
+
+	void drawValueRow(const char* label, int value)
+	{
+		char text[16];
+		snprintf(text, sizeof(text), "%d", value);
+		drawValueRow(label, text);
+	}
+
+	void drawValueRow(const char* label, float value)
+	{
+		char text[32];
+		snprintf(text, sizeof(text), "%.2f", value);
+		drawValueRow(label, text);
+	}
+
+	void drawValueRow(const char* label, const glm::vec3& value)
+	{
+		char text[96];
+		snprintf(text, sizeof(text), "(%.2f, %.2f, %.2f)", value.x, value.y, value.z);
+		drawValueRow(label, text);
+	}
+
+	void drawValueRow(const char* label, const glm::vec4& value)
+	{
+		char text[128];
+		snprintf(text, sizeof(text), "(%.2f, %.2f, %.2f, %.2f)", value.x, value.y, value.z, value.w);
+		drawValueRow(label, text);
+	}
 }
 
 void drawAiDebugPanel(const Game& game, bool& enabled)
@@ -309,6 +360,10 @@ void drawAiDebugPanel(const Game& game, bool& enabled)
 
 		drawStatusRow("Line of sight", info.canSeePlayer, "VISIBLE", "HIDDEN");
 		drawStatusRow("In range", info.playerInRange, "YES", "NO");
+		drawStatusRow("Within FOV", info.playerWithinFov, "YES", "NO");
+		drawValueRow("Last known location", info.lastKnownLocation);
+		drawValueRow("Time since last seen player", info.timeSinceLastSeenPlayer);
+		drawStatusRow("Has memory", info.hasRecentMemory, "YES", "NO");
 
 		ImGui::Spacing();
 		ImGui::TextColored(debugMuted, "Distance to player");

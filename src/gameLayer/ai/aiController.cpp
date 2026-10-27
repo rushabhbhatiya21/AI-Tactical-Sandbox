@@ -98,6 +98,17 @@ void AIController::update(float dt)
 		static_cast<float>(feet.GetY()) + halfHeight, 
 		static_cast<float>(feet.GetZ())
 	);
+
+	if (canSeePlayer())
+	{
+		lastKnownLocation = player.transform.position;
+		hasAcquiredValidPosition = true;
+		timeSinceLastSeenPlayer = 0.0f;
+	}
+	else if (hasAcquiredValidPosition)
+	{
+		timeSinceLastSeenPlayer += dt;
+	}
 }
 
 JPH::CharacterVirtual* AIController::getCharacter() const
@@ -108,6 +119,7 @@ JPH::CharacterVirtual* AIController::getCharacter() const
 bool AIController::canSeePlayer() const
 {
 	if (!isPlayerInDetectionRange()) return false;
+	if (!isPlayerWithinFOV()) return false;
 	glm::vec3 agentEyePosition = aiAgent.transform.position;
 	agentEyePosition.y += 0.5f;
 	glm::vec3 playerEyePosition = player.transform.position;
@@ -121,12 +133,39 @@ AIDebugInfo AIController::getDebugInfo() const
 	info.distanceToPlayer = glm::length(player.transform.position - aiAgent.transform.position);
 	info.detectionRange = detectionRange;
 	info.playerInRange = isPlayerInDetectionRange();
+	info.playerWithinFov = isPlayerWithinFOV();
 	info.canSeePlayer = canSeePlayer();
+	info.lastKnownLocation = lastKnownLocation;
+	info.timeSinceLastSeenPlayer = timeSinceLastSeenPlayer;
+	info.hasRecentMemory = hasRecentMemory();
 	return info;
+}
+
+PerceptionState AIController::getPerceptionState() const
+{
+	if (canSeePlayer()) return PerceptionState::Visible;
+	else if (hasAcquiredValidPosition) return PerceptionState::Remembered;
+	else return PerceptionState::Unknown;
 }
 
 bool AIController::isPlayerInDetectionRange() const
 {
 	glm::vec3 dist = player.transform.position - aiAgent.transform.position;
 	return glm::dot(dist, dist) <= detectionRange * detectionRange;
+}
+
+bool AIController::isPlayerWithinFOV() const
+{
+	glm::vec3 dir = player.transform.position - aiAgent.transform.position;
+	if (glm::dot(dir, dir) >= 0.0001f)
+		dir = glm::normalize(dir);
+	glm::vec3 forward = glm::vec3(sin(glm::radians(aiAgent.transform.rotation.y)), 0.0f, cos(glm::radians(aiAgent.transform.rotation.y)));
+	if (glm::dot(forward, dir) >= glm::cos(glm::radians(45.0f)))
+		return true;
+	return false;
+}
+
+bool AIController::hasRecentMemory() const
+{
+	return hasAcquiredValidPosition && timeSinceLastSeenPlayer < memoryDuration;
 }
