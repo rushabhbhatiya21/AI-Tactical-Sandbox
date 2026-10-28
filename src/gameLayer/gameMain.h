@@ -11,6 +11,7 @@
 #include "playerController.h"
 #include "thirdPersonCamera.h"
 #include "ai/aiController.h"
+#include "sound/soundEvent.h"
 
 #include <material.h>
 #include <types/vertex.h>
@@ -53,6 +54,7 @@ private:
 	std::unique_ptr<PlayerController> playerController;
 	std::unique_ptr<ThirdPersonCamera> thirdPersonCamera;
 	std::unique_ptr<AIController> aiController;
+	std::vector<SoundEvent> soundEvents;
 
 	bool debugCameraEnabled = false;
 
