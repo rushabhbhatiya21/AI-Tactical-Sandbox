@@ -6,6 +6,7 @@ namespace JPH
 	class CharacterVirtual;
 }
 
+struct SoundEvent;
 class PhysicsWorld;
 
 // Snapshot of what the agent currently knows, for the debug panel
@@ -43,6 +44,8 @@ public:
 	bool canSeePlayer() const;
 	AIDebugInfo getDebugInfo() const;
 	PerceptionState getPerceptionState() const;
+
+	bool canHearSound(const SoundEvent& sound) const;
 
 private:
 	bool isPlayerInDetectionRange() const;

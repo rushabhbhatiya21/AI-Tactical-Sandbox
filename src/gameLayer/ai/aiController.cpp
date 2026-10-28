@@ -14,6 +14,7 @@
 #include "aiController.h"
 #include <physicsWorld.h>
 #include <physicsLayers.h>
+#include <sound/soundEvent.h>
 
 AIController::AIController(GameObject& agent, GameObject& player, PhysicsWorld& world, JPH::CharacterVsCharacterCollisionSimple& collision)
 	: aiAgent(agent), player(player), physicsWorld(world), characterCollision(collision)
@@ -146,6 +147,15 @@ PerceptionState AIController::getPerceptionState() const
 	if (canSeePlayer()) return PerceptionState::Visible;
 	else if (hasAcquiredValidPosition) return PerceptionState::Remembered;
 	else return PerceptionState::Unknown;
+}
+
+bool AIController::canHearSound(const SoundEvent& sound) const
+{
+	glm::vec3 difference = aiAgent.transform.position - sound.origin;
+	float distanceSquared = glm::dot(difference, difference);
+	float radiusSquared = sound.radius * sound.radius;
+
+	return distanceSquared <= radiusSquared;
 }
 
 bool AIController::isPlayerInDetectionRange() const
