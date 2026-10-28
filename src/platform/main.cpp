@@ -313,6 +313,22 @@ namespace
 		snprintf(text, sizeof(text), "(%.2f, %.2f, %.2f, %.2f)", value.x, value.y, value.z, value.w);
 		drawValueRow(label, text);
 	}
+
+	void drawValueRow(const char* label, const PerceptionState& state)
+	{
+		switch (state)
+		{
+		case PerceptionState::Visible:
+			drawValueRow(label, "VISIBLE");
+			return;
+		case PerceptionState::Remembered:
+			drawValueRow(label, "REMEMBERED");
+			return;
+		case PerceptionState::Unknown:
+			drawValueRow(label, "UNKNOWN");
+			return;
+		}
+	}
 }
 
 void drawAiDebugPanel(const Game& game, bool& enabled)
@@ -364,6 +380,7 @@ void drawAiDebugPanel(const Game& game, bool& enabled)
 		drawValueRow("Last known location", info.lastKnownLocation);
 		drawValueRow("Time since last seen player", info.timeSinceLastSeenPlayer);
 		drawStatusRow("Has memory", info.hasRecentMemory, "YES", "NO");
+		drawValueRow("Agent state", info.state);
 
 		ImGui::Spacing();
 		ImGui::TextColored(debugMuted, "Distance to player");

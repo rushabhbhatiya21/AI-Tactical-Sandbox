@@ -9,6 +9,14 @@ namespace JPH
 struct SoundEvent;
 class PhysicsWorld;
 
+enum class PerceptionState
+{
+	Visible,
+	Remembered,
+	Unknown
+};
+
+
 // Snapshot of what the agent currently knows, for the debug panel
 struct AIDebugInfo
 {
@@ -20,13 +28,7 @@ struct AIDebugInfo
 	glm::vec3 lastKnownLocation = glm::vec3();
 	float timeSinceLastSeenPlayer = 0.0f;
 	bool hasRecentMemory = false;
-};
-
-enum class PerceptionState
-{
-	Visible,
-	Remembered,
-	Unknown
+	PerceptionState state = PerceptionState::Unknown;
 };
 
 class AIController

@@ -139,13 +139,14 @@ AIDebugInfo AIController::getDebugInfo() const
 	info.lastKnownLocation = lastKnownLocation;
 	info.timeSinceLastSeenPlayer = timeSinceLastSeenPlayer;
 	info.hasRecentMemory = hasRecentMemory();
+	info.state = getPerceptionState();
 	return info;
 }
 
 PerceptionState AIController::getPerceptionState() const
 {
 	if (canSeePlayer()) return PerceptionState::Visible;
-	else if (hasAcquiredValidPosition) return PerceptionState::Remembered;
+	else if (hasRecentMemory()) return PerceptionState::Remembered;
 	else return PerceptionState::Unknown;
 }
 
