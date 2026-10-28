@@ -59,6 +59,8 @@ AIController::~AIController()
 
 void AIController::update(float dt)
 {
+	heardSoundThisFrame = false;
+
 	JPH::PhysicsSystem& physicsSystem = physicsWorld.getPhysicsSystem();
 	JPH::Vec3 gravity = physicsSystem.GetGravity();
 
@@ -100,16 +102,8 @@ void AIController::update(float dt)
 		static_cast<float>(feet.GetZ())
 	);
 
-	if (canSeePlayer())
-	{
-		lastKnownLocation = player.transform.position;
-		hasAcquiredValidPosition = true;
-		timeSinceLastSeenPlayer = 0.0f;
-	}
-	else if (hasAcquiredValidPosition)
-	{
-		timeSinceLastSeenPlayer += dt;
-	}
+	updateVisualPerception(dt);
+	updateSoundPerception(dt);
 }
 
 JPH::CharacterVirtual* AIController::getCharacter() const
@@ -139,24 +133,38 @@ AIDebugInfo AIController::getDebugInfo() const
 	info.lastKnownLocation = lastKnownLocation;
 	info.timeSinceLastSeenPlayer = timeSinceLastSeenPlayer;
 	info.hasRecentMemory = hasRecentMemory();
-	info.state = getPerceptionState();
+	info.visualPerceptionState = getVisualPerceptionState();
+	info.lastKnownSoundLocation = lastKnownSoundLocation;
+	info.hasHeardSound = hasHeardSound;
+	info.hasRecentSoundMemory = hasRecentSoundMemory();
+	info.auditoryPerceptionState = getAuditoryPerceptionState();
+
 	return info;
 }
 
-PerceptionState AIController::getPerceptionState() const
+VisualPerceptionState AIController::getVisualPerceptionState() const
 {
-	if (canSeePlayer()) return PerceptionState::Visible;
-	else if (hasRecentMemory()) return PerceptionState::Remembered;
-	else return PerceptionState::Unknown;
+	if (canSeePlayer()) return VisualPerceptionState::Visible;
+	else if (hasRecentMemory()) return VisualPerceptionState::Remembered;
+	else return VisualPerceptionState::Unknown;
 }
 
-bool AIController::canHearSound(const SoundEvent& sound) const
+AuditoryPerceptionState AIController::getAuditoryPerceptionState() const
 {
-	glm::vec3 difference = aiAgent.transform.position - sound.origin;
-	float distanceSquared = glm::dot(difference, difference);
-	float radiusSquared = sound.radius * sound.radius;
+	if (heardSoundThisFrame) return AuditoryPerceptionState::Heard;
+	if (hasRecentSoundMemory()) return AuditoryPerceptionState::Remembered;
+	else return AuditoryPerceptionState::Unknown;
+}
 
-	return distanceSquared <= radiusSquared;
+void AIController::processSoundEvent(const SoundEvent& sound)
+{
+	if (canHearSound(sound))
+	{
+		lastKnownSoundLocation = sound.origin;
+		hasHeardSound = true;
+		heardSoundThisFrame = true;
+		timeSinceLastHeardSound = 0.0f;
+	}
 }
 
 bool AIController::isPlayerInDetectionRange() const
@@ -176,7 +184,46 @@ bool AIController::isPlayerWithinFOV() const
 	return false;
 }
 
+void AIController::updateVisualPerception(float dt)
+{
+	if (canSeePlayer())
+	{
+		lastKnownLocation = player.transform.position;
+		hasAcquiredValidPosition = true;
+		timeSinceLastSeenPlayer = 0.0f;
+	}
+	else if (hasAcquiredValidPosition)
+	{
+		timeSinceLastSeenPlayer += dt;
+	}
+}
+
 bool AIController::hasRecentMemory() const
 {
 	return hasAcquiredValidPosition && timeSinceLastSeenPlayer < memoryDuration;
+}
+
+bool AIController::canHearSound(const SoundEvent& sound) const
+{
+	glm::vec3 difference = aiAgent.transform.position - sound.origin;
+	float distanceSquared = glm::dot(difference, difference);
+	float radiusSquared = sound.radius * sound.radius;
+
+	return distanceSquared <= radiusSquared;
+}
+
+void AIController::updateSoundPerception(float dt)
+{
+	if (!hasHeardSound)
+		return;
+
+	timeSinceLastHeardSound += dt;
+
+	if (timeSinceLastHeardSound >= soundMemoryDuration)
+		hasHeardSound = false;
+}
+
+bool AIController::hasRecentSoundMemory() const
+{
+	return hasHeardSound && timeSinceLastHeardSound < soundMemoryDuration;
 }

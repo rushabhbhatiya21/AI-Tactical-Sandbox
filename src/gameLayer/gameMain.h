@@ -36,7 +36,9 @@ public:
 	void closeGame();
 
 	// for debugging
-	AIDebugInfo getAIDebugInfo() const;
+	AIDebugInfo getAIDebugInfo();
+	void emitTestSoundEvent();
+	const std::vector<SoundEvent>& getSoundEvents();
 
 private:
 	const Material& materialFor(ArenaPieceKind kind) const;

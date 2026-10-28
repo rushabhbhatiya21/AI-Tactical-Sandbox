@@ -73,6 +73,13 @@ void Game::updateGame(float deltaTime, const InputState& inputState)
 	physicsWorld.update(deltaTime);
 	aiController->update(deltaTime);
 
+	for (const auto& sound : soundEvents)
+	{
+		aiController->processSoundEvent(sound);
+	}
+
+	soundEvents.clear();
+
 	if (inputState.toggleDebugCamera)
 		debugCameraEnabled = !debugCameraEnabled;
 
@@ -97,6 +104,7 @@ void Game::updateGame(float deltaTime, const InputState& inputState)
 			camera.processKeyboard(DOWN, deltaTime);
 	}
 
+	// rendering
 	const std::vector<std::unique_ptr<GameObject>>& gameObjects = world.getGameObjects();
 	const ICamera& activeCamera = debugCameraEnabled ? static_cast<const ICamera&>(camera) : *thirdPersonCamera;
 	renderer->beginFrame();
@@ -168,7 +176,25 @@ void Game::closeGame()
 	renderer.reset();
 }
 
-AIDebugInfo Game::getAIDebugInfo() const
+AIDebugInfo Game::getAIDebugInfo()
 {
 	return aiController->getDebugInfo();
+}
+
+void Game::emitTestSoundEvent()
+{
+	SoundEvent sound;
+	sound.origin = glm::vec3(
+		playerController->getCharacter()->GetPosition().GetX(),
+		playerController->getCharacter()->GetPosition().GetY(),
+		playerController->getCharacter()->GetPosition().GetZ()
+	);
+	sound.radius = 10.0f;
+	sound.eventType = SoundEventType::Gunshot;
+	soundEvents.push_back(sound);
+}
+
+const std::vector<SoundEvent>& Game::getSoundEvents()
+{
+	return soundEvents;
 }

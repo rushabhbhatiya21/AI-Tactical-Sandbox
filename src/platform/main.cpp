@@ -25,7 +25,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window, InputState& inputState, KeyEdgeState& edges);
 void drawFpsOverlay(float fps, bool& aiDebugVisible);
-void drawAiDebugPanel(const Game& game, bool& enabled);
+void drawAiDebugPanel(Game& game, bool& enabled);
 void setCursorFree(GLFWwindow* window, bool free);
 
 // settings
@@ -314,24 +314,40 @@ namespace
 		drawValueRow(label, text);
 	}
 
-	void drawValueRow(const char* label, const PerceptionState& state)
+	void drawValueRow(const char* label, const VisualPerceptionState& state)
 	{
 		switch (state)
 		{
-		case PerceptionState::Visible:
+		case VisualPerceptionState::Visible:
 			drawValueRow(label, "VISIBLE");
 			return;
-		case PerceptionState::Remembered:
+		case VisualPerceptionState::Remembered:
 			drawValueRow(label, "REMEMBERED");
 			return;
-		case PerceptionState::Unknown:
+		case VisualPerceptionState::Unknown:
+			drawValueRow(label, "UNKNOWN");
+			return;
+		}
+	}
+
+	void drawValueRow(const char* label, const AuditoryPerceptionState& state)
+	{
+		switch (state)
+		{
+		case AuditoryPerceptionState::Heard:
+			drawValueRow(label, "HEARD");
+			return;
+		case AuditoryPerceptionState::Remembered:
+			drawValueRow(label, "REMEMBERED");
+			return;
+		case AuditoryPerceptionState::Unknown:
 			drawValueRow(label, "UNKNOWN");
 			return;
 		}
 	}
 }
 
-void drawAiDebugPanel(const Game& game, bool& enabled)
+void drawAiDebugPanel(Game& game, bool& enabled)
 {
 	const ImGuiWindowFlags flags =
 		ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
@@ -374,13 +390,18 @@ void drawAiDebugPanel(const Game& game, bool& enabled)
 		// Only query the AI while enabled, so turning the panel off also skips the line-of-sight raycast
 		const AIDebugInfo info = game.getAIDebugInfo();
 
-		drawStatusRow("Line of sight", info.canSeePlayer, "VISIBLE", "HIDDEN");
-		drawStatusRow("In range", info.playerInRange, "YES", "NO");
-		drawStatusRow("Within FOV", info.playerWithinFov, "YES", "NO");
-		drawValueRow("Last known location", info.lastKnownLocation);
-		drawValueRow("Time since last seen player", info.timeSinceLastSeenPlayer);
-		drawStatusRow("Has memory", info.hasRecentMemory, "YES", "NO");
-		drawValueRow("Agent state", info.state);
+		//drawStatusRow("Line of sight", info.canSeePlayer, "VISIBLE", "HIDDEN");
+		//drawStatusRow("In range", info.playerInRange, "YES", "NO");
+		//drawStatusRow("Within FOV", info.playerWithinFov, "YES", "NO");
+		//drawValueRow("Last known location", info.lastKnownLocation);
+		//drawValueRow("Time since last seen player", info.timeSinceLastSeenPlayer);
+		//drawStatusRow("Has memory", info.hasRecentMemory, "YES", "NO");
+		drawValueRow("Visible state", info.visualPerceptionState);
+		//drawValueRow("Last known sound location", info.lastKnownSoundLocation);
+		//drawStatusRow("Has heard sound", info.hasHeardSound, "YES", "NO");
+		//drawStatusRow("Has sound memory", info.hasRecentSoundMemory, "YES", "NO");
+		drawValueRow("Sound state", info.auditoryPerceptionState);
+
 
 		ImGui::Spacing();
 		ImGui::TextColored(debugMuted, "Distance to player");
@@ -393,6 +414,12 @@ void drawAiDebugPanel(const Game& game, bool& enabled)
 		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.16f, 0.16f, 0.19f, 1.0f));
 		ImGui::ProgressBar(fraction, ImVec2(-FLT_MIN, 0.0f), overlay);
 		ImGui::PopStyleColor(2);
+
+		if (ImGui::Button("Emit Test Sound"))
+			game.emitTestSoundEvent();
+
+		//const auto& soundEvents = game.getSoundEvents();
+		//drawValueRow("Events size", static_cast<int>(soundEvents.size()));
 	}
 	else
 	{

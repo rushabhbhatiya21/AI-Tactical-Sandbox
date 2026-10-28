@@ -9,13 +9,19 @@ namespace JPH
 struct SoundEvent;
 class PhysicsWorld;
 
-enum class PerceptionState
+enum class VisualPerceptionState
 {
 	Visible,
 	Remembered,
 	Unknown
 };
 
+enum class AuditoryPerceptionState
+{
+	Heard,
+	Remembered,
+	Unknown
+};
 
 // Snapshot of what the agent currently knows, for the debug panel
 struct AIDebugInfo
@@ -28,7 +34,11 @@ struct AIDebugInfo
 	glm::vec3 lastKnownLocation = glm::vec3();
 	float timeSinceLastSeenPlayer = 0.0f;
 	bool hasRecentMemory = false;
-	PerceptionState state = PerceptionState::Unknown;
+	VisualPerceptionState visualPerceptionState = VisualPerceptionState::Unknown;
+	glm::vec3 lastKnownSoundLocation = glm::vec3();
+	bool hasHeardSound = false;
+	bool hasRecentSoundMemory = false;
+	AuditoryPerceptionState auditoryPerceptionState = AuditoryPerceptionState::Unknown;
 };
 
 class AIController
@@ -45,14 +55,20 @@ public:
 
 	bool canSeePlayer() const;
 	AIDebugInfo getDebugInfo() const;
-	PerceptionState getPerceptionState() const;
+	VisualPerceptionState getVisualPerceptionState() const;
+	AuditoryPerceptionState getAuditoryPerceptionState() const;
 
-	bool canHearSound(const SoundEvent& sound) const;
+	void processSoundEvent(const SoundEvent& sound);
 
 private:
 	bool isPlayerInDetectionRange() const;
 	bool isPlayerWithinFOV() const;
+	void updateVisualPerception(float dt);
 	bool hasRecentMemory() const;
+
+	bool canHearSound(const SoundEvent& sound) const;
+	void updateSoundPerception(float dt);
+	bool hasRecentSoundMemory() const;
 
 private:
 	GameObject& aiAgent;
@@ -66,10 +82,18 @@ private:
 	float movementSpeed = 2.0f;
 	glm::vec3 movementDirection = glm::vec3(0.0f, 0.0f, 1.0f);
 
+
+	// visual perception
 	float detectionRange = 25.0f;
 	glm::vec3 lastKnownLocation = glm::vec3();
 	bool hasAcquiredValidPosition = false;
 	float timeSinceLastSeenPlayer = 0.0f;
-
 	float memoryDuration = 5.0f;
+
+	// hearing perception
+	glm::vec3 lastKnownSoundLocation = glm::vec3();
+	bool hasHeardSound = false;
+	bool heardSoundThisFrame = false;
+	float timeSinceLastHeardSound = 0.0f;
+	float soundMemoryDuration = 5.0f;
 };
