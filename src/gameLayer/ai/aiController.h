@@ -9,6 +9,14 @@ namespace JPH
 struct SoundEvent;
 class PhysicsWorld;
 
+enum class AIState
+{
+	Unaware,
+	Engage,
+	Investigate,
+	Search
+};
+
 enum class VisualPerceptionState
 {
 	Visible,
@@ -70,6 +78,10 @@ private:
 	void updateSoundPerception(float dt);
 	bool hasRecentSoundMemory() const;
 
+	void updateDecision();
+	void updateMovementDirection();
+	void enterState(AIState newState);
+
 private:
 	GameObject& aiAgent;
 	GameObject& player;
@@ -82,9 +94,7 @@ private:
 	float movementSpeed = 2.0f;
 	glm::vec3 movementDirection = glm::vec3(0.0f, 0.0f, 1.0f);
 
-
 	// visual perception
-	float detectionRange = 25.0f;
 	glm::vec3 lastKnownLocation = glm::vec3();
 	bool hasAcquiredValidPosition = false;
 	float timeSinceLastSeenPlayer = 0.0f;
@@ -96,4 +106,15 @@ private:
 	bool heardSoundThisFrame = false;
 	float timeSinceLastHeardSound = 0.0f;
 	float soundMemoryDuration = 5.0f;
+
+	AIState currentState = AIState::Unaware;
+	AIState previousState = AIState::Unaware;
+
+	float searchTimer = 0.0f;
+	float investigateTimer = 0.0f;
+
+	static constexpr float SEARCH_TIME = 10.0f;
+	static constexpr float INVESTIGATE_TIME = 10.0f;
+	static constexpr float DETECTION_RANGE = 30.0f;
+	static constexpr float ARRIVAL_DISTANCE = 0.75f;
 };

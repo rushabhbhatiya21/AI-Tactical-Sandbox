@@ -61,6 +61,16 @@ void AIController::update(float dt)
 {
 	heardSoundThisFrame = false;
 
+	updateVisualPerception(dt);
+	updateSoundPerception(dt);
+
+	// Timers
+	if (searchTimer      > 0.0f) searchTimer -= dt;
+	if (investigateTimer > 0.0f) investigateTimer -= dt;
+
+	updateDecision();
+	updateMovementDirection();
+
 	JPH::PhysicsSystem& physicsSystem = physicsWorld.getPhysicsSystem();
 	JPH::Vec3 gravity = physicsSystem.GetGravity();
 
@@ -101,9 +111,6 @@ void AIController::update(float dt)
 		static_cast<float>(feet.GetY()) + halfHeight, 
 		static_cast<float>(feet.GetZ())
 	);
-
-	updateVisualPerception(dt);
-	updateSoundPerception(dt);
 }
 
 JPH::CharacterVirtual* AIController::getCharacter() const
@@ -126,7 +133,7 @@ AIDebugInfo AIController::getDebugInfo() const
 {
 	AIDebugInfo info;
 	info.distanceToPlayer = glm::length(player.transform.position - aiAgent.transform.position);
-	info.detectionRange = detectionRange;
+	info.detectionRange = DETECTION_RANGE;
 	info.playerInRange = isPlayerInDetectionRange();
 	info.playerWithinFov = isPlayerWithinFOV();
 	info.canSeePlayer = canSeePlayer();
@@ -170,7 +177,7 @@ void AIController::processSoundEvent(const SoundEvent& sound)
 bool AIController::isPlayerInDetectionRange() const
 {
 	glm::vec3 dist = player.transform.position - aiAgent.transform.position;
-	return glm::dot(dist, dist) <= detectionRange * detectionRange;
+	return glm::dot(dist, dist) <= DETECTION_RANGE * DETECTION_RANGE;
 }
 
 bool AIController::isPlayerWithinFOV() const
@@ -226,4 +233,134 @@ void AIController::updateSoundPerception(float dt)
 bool AIController::hasRecentSoundMemory() const
 {
 	return hasHeardSound && timeSinceLastHeardSound < soundMemoryDuration;
+}
+
+void AIController::updateDecision()
+{
+	const bool playerVisible = canSeePlayer();
+
+	if (playerVisible)
+	{
+		enterState(AIState::Engage);
+		return;
+	}
+
+	if (currentState == AIState::Engage && !playerVisible)
+	{
+		if (hasRecentMemory())
+			enterState(AIState::Search);
+		else if (hasRecentSoundMemory())
+			enterState(AIState::Investigate);
+		else
+			enterState(AIState::Unaware);
+		return;
+	}
+
+	if (currentState == AIState::Search && searchTimer <= 0.0f)
+	{
+		if (hasRecentSoundMemory())
+		{
+			enterState(AIState::Investigate);
+			return;
+		}
+		enterState(AIState::Unaware);
+		return;
+	}
+
+	if (currentState == AIState::Investigate && investigateTimer <= 0.0f)
+	{
+		if (hasRecentMemory())
+		{
+			enterState(AIState::Search);
+			return;
+		}
+		enterState(AIState::Unaware);
+		return;
+	}
+
+	if (currentState == AIState::Unaware)
+	{
+		// Unaware branch should respond to recent sound memory by entering Investigate, 
+		// but it should not automatically enter Search just because visual memory exists.
+		if (hasRecentSoundMemory())
+		{
+			enterState(AIState::Investigate);
+			return;
+		}
+	}
+}
+
+void AIController::updateMovementDirection()
+{
+	switch (currentState)
+	{
+	case AIState::Unaware:
+		// direction should be towards patrol waypoints later
+		movementDirection = glm::vec3(0.0f);
+		break;
+	case AIState::Engage:
+	{
+		glm::vec3 dir = player.transform.position - aiAgent.transform.position;
+		dir.y = 0.0f; // ignore vertical dir
+		if (glm::dot(dir, dir) > 1e-6f)
+			dir = glm::normalize(dir);
+		movementDirection = dir;
+		break;
+	}
+	case AIState::Investigate:
+	{
+		glm::vec3 dir = lastKnownSoundLocation - aiAgent.transform.position;
+		dir.y = 0.0f; // ignore vertical dir
+		if (glm::dot(dir, dir) <= ARRIVAL_DISTANCE * ARRIVAL_DISTANCE)
+			dir = glm::vec3();
+		else
+			dir = glm::normalize(dir);
+		movementDirection = dir;
+		break;
+	}
+	case AIState::Search:
+	{
+		glm::vec3 dir = lastKnownLocation - aiAgent.transform.position;
+		dir.y = 0.0f; // ignore vertical dir
+		if (glm::dot(dir, dir) <= ARRIVAL_DISTANCE * ARRIVAL_DISTANCE)
+			dir = glm::vec3();
+		else
+			dir = glm::normalize(dir);
+		movementDirection = dir;
+		break;
+	}
+	default:
+		break;
+	}
+
+	if (glm::dot(movementDirection, movementDirection) < 1e-6f)
+	{
+		float yawRadians = std::atan2(movementDirection.x, movementDirection.z);
+		aiAgent.transform.rotation.y = glm::degrees(yawRadians);
+	}
+}
+
+void AIController::enterState(AIState newState)
+{
+	if (currentState == newState)
+		return;
+
+	previousState = currentState;
+	currentState = newState;
+
+	switch (currentState)
+	{
+	case AIState::Unaware:
+		break;
+	case AIState::Engage:
+		break;
+	case AIState::Investigate:
+		investigateTimer = INVESTIGATE_TIME;
+		break;
+	case AIState::Search:
+		searchTimer = SEARCH_TIME;
+		break;
+	default:
+		break;
+	}
 }
