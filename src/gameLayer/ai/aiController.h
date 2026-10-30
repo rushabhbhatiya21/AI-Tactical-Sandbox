@@ -47,6 +47,7 @@ struct AIDebugInfo
 	bool hasHeardSound = false;
 	bool hasRecentSoundMemory = false;
 	AuditoryPerceptionState auditoryPerceptionState = AuditoryPerceptionState::Unknown;
+	AIState currentState = AIState::Unaware;
 };
 
 class AIController
@@ -79,8 +80,10 @@ private:
 	bool hasRecentSoundMemory() const;
 
 	void updateDecision();
-	void updateMovementDirection();
+	void updateMovementDirection(float dt);
 	void enterState(AIState newState);
+
+	void updateInvestigateBehavior(float dt);
 
 private:
 	GameObject& aiAgent;
@@ -107,6 +110,13 @@ private:
 	float timeSinceLastHeardSound = 0.0f;
 	float soundMemoryDuration = 5.0f;
 
+	// investigate
+	bool hasReachedSoundLocation = false;
+	float investigateFacingYaw = 0.0f;
+	float investigateScanDirection = 1.0f;
+	float investigateScanAngle = 0.0f;
+	float investigateAngleChangeTime = 0.0f;
+
 	AIState currentState = AIState::Unaware;
 	AIState previousState = AIState::Unaware;
 
@@ -115,6 +125,9 @@ private:
 
 	static constexpr float SEARCH_TIME = 10.0f;
 	static constexpr float INVESTIGATE_TIME = 10.0f;
-	static constexpr float DETECTION_RANGE = 30.0f;
+	static constexpr float DETECTION_RANGE = 20.0f;
 	static constexpr float ARRIVAL_DISTANCE = 0.75f;
+	static constexpr float INVESTIGATE_SCAN_ANGLE = 45.0f;
+	static constexpr float INVESTIGATE_SCAN_SPEED = 45.0f;
+	static constexpr float INVESTIGATE_ANGLE_CHANGE_WAIT_TIME = 2.0f;
 };

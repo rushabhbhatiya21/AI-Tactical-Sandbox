@@ -65,11 +65,12 @@ void AIController::update(float dt)
 	updateSoundPerception(dt);
 
 	// Timers
-	if (searchTimer      > 0.0f) searchTimer -= dt;
-	if (investigateTimer > 0.0f) investigateTimer -= dt;
+	if (searchTimer                > 0.0f) searchTimer -= dt;
+	if (investigateTimer           > 0.0f) investigateTimer -= dt;
+	if (investigateAngleChangeTime > 0.0f) investigateAngleChangeTime -= dt;
 
 	updateDecision();
-	updateMovementDirection();
+	updateMovementDirection(dt);
 
 	JPH::PhysicsSystem& physicsSystem = physicsWorld.getPhysicsSystem();
 	JPH::Vec3 gravity = physicsSystem.GetGravity();
@@ -145,6 +146,7 @@ AIDebugInfo AIController::getDebugInfo() const
 	info.hasHeardSound = hasHeardSound;
 	info.hasRecentSoundMemory = hasRecentSoundMemory();
 	info.auditoryPerceptionState = getAuditoryPerceptionState();
+	info.currentState = currentState;
 
 	return info;
 }
@@ -267,7 +269,7 @@ void AIController::updateDecision()
 		return;
 	}
 
-	if (currentState == AIState::Investigate && investigateTimer <= 0.0f)
+	if (currentState == AIState::Investigate && hasReachedSoundLocation && investigateTimer <= 0.0f)
 	{
 		if (hasRecentMemory())
 		{
@@ -290,7 +292,7 @@ void AIController::updateDecision()
 	}
 }
 
-void AIController::updateMovementDirection()
+void AIController::updateMovementDirection(float dt)
 {
 	switch (currentState)
 	{
@@ -312,10 +314,22 @@ void AIController::updateMovementDirection()
 		glm::vec3 dir = lastKnownSoundLocation - aiAgent.transform.position;
 		dir.y = 0.0f; // ignore vertical dir
 		if (glm::dot(dir, dir) <= ARRIVAL_DISTANCE * ARRIVAL_DISTANCE)
+		{
 			dir = glm::vec3();
+
+			if (!hasReachedSoundLocation)
+			{
+				hasReachedSoundLocation = true;
+				investigateFacingYaw = aiAgent.transform.rotation.y;
+				investigateScanDirection = 1.0f;
+				investigateTimer = INVESTIGATE_TIME;
+			}
+		}
+
 		else
 			dir = glm::normalize(dir);
 		movementDirection = dir;
+		updateInvestigateBehavior(dt);
 		break;
 	}
 	case AIState::Search:
@@ -333,7 +347,7 @@ void AIController::updateMovementDirection()
 		break;
 	}
 
-	if (glm::dot(movementDirection, movementDirection) < 1e-6f)
+	if (glm::dot(movementDirection, movementDirection) > 1e-6f)
 	{
 		float yawRadians = std::atan2(movementDirection.x, movementDirection.z);
 		aiAgent.transform.rotation.y = glm::degrees(yawRadians);
@@ -355,12 +369,37 @@ void AIController::enterState(AIState newState)
 	case AIState::Engage:
 		break;
 	case AIState::Investigate:
-		investigateTimer = INVESTIGATE_TIME;
+		hasReachedSoundLocation = false;
 		break;
 	case AIState::Search:
 		searchTimer = SEARCH_TIME;
 		break;
 	default:
 		break;
+	}
+}
+
+void AIController::updateInvestigateBehavior(float dt)
+{
+	if (!hasReachedSoundLocation) return;
+
+	if (investigateScanAngle >= INVESTIGATE_SCAN_ANGLE && investigateScanDirection > 0)
+	{
+		investigateScanAngle = std::clamp(investigateScanAngle, 0.0f, INVESTIGATE_SCAN_ANGLE);
+		investigateScanDirection = -1.0f;
+		investigateAngleChangeTime = INVESTIGATE_ANGLE_CHANGE_WAIT_TIME;
+	}
+
+	if (investigateScanAngle <= -INVESTIGATE_SCAN_ANGLE && investigateScanDirection < 0)
+	{
+		investigateScanAngle = std::clamp(investigateScanAngle, -INVESTIGATE_SCAN_ANGLE, 0.0f);
+		investigateScanDirection = 1.0f;
+		investigateAngleChangeTime = INVESTIGATE_ANGLE_CHANGE_WAIT_TIME;
+	}
+
+	if (investigateAngleChangeTime <= 0.0f)
+	{
+		investigateScanAngle += investigateScanDirection * INVESTIGATE_SCAN_SPEED * dt;
+		aiAgent.transform.rotation.y = investigateFacingYaw + investigateScanAngle;
 	}
 }
