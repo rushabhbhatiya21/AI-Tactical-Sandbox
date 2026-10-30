@@ -189,7 +189,7 @@ void Game::emitTestSoundEvent()
 		playerController->getCharacter()->GetPosition().GetY(),
 		playerController->getCharacter()->GetPosition().GetZ()
 	);
-	sound.radius = 10.0f;
+	sound.radius = 30.0f;
 	sound.eventType = SoundEventType::Gunshot;
 	soundEvents.push_back(sound);
 }
