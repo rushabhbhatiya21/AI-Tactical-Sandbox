@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Time-Based Motion</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<main>
+<header>
+  <div class="kicker">Reference card</div>
+  <h1>Time-based motion</h1>
+  <p class="sub">Anything that changes “per second” is updated with rate × dt.</p>
+</header>
+
+<div class="formula">value += direction × rate × dt</div>
+
+<table>
+  <tr><th>Piece</th><th>Unit</th><th>Meaning</th></tr>
+  <tr><td>rate</td><td>units / s</td><td>How fast it changes (e.g. 45 °/s, 2 m/s)</td></tr>
+  <tr><td>dt</td><td>s</td><td>Real time since the last frame</td></tr>
+  <tr><td>rate × dt</td><td>units</td><td>How much it changes this frame</td></tr>
+  <tr><td>direction</td><td>±1</td><td>Sign only: which way, never how far</td></tr>
+</table>
+
+<h2>Rules of thumb</h2>
+<ul>
+  <li>Check the units. If the right-hand side doesn't come out in the same unit as the value, something is missing.</li>
+  <li>Timers count down the same way: <code>timer -= dt</code>.</li>
+  <li>Never add a fixed per-frame amount for something meant to happen per second. It ties behavior to frame rate.</li>
+</ul>
+
+<h2>In this project</h2>
+<pre><code>investigateTimer -= dt;           // s
+newVelocity      += gravity * dt; // m/s</code></pre>
+
+<footer>
+  <p>Introduced in <a href="../lessons/0001-turning-by-time.html">Lesson 0001</a>. Source: Nystrom, <a href="https://gameprogrammingpatterns.com/game-loop.html">“Game Loop”</a>.</p>
+</footer>
+</main>
+</body>
+</html>

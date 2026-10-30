@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Turning by Time</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<main>
+<header>
+  <div class="kicker">Lesson 0001 · Investigate scanning, step 1 of 3</div>
+  <h1>Turning by time, not by frame</h1>
+  <p class="sub">How <code>investigateScanAngle</code> grows a little every frame, and why “a little” has to depend on <code>dt</code>.</p>
+</header>
+
+<h2>The picture</h2>
+<p>Look at the agent from above. When it arrives at the sound, you freeze one line: <code>investigateFacingYaw</code>, the direction it was facing when it got there. That line never moves during the scan. It is the centre of the sweep.</p>
+<p><code>investigateScanAngle</code> is the <em>gap</em> between that frozen line and where the agent is looking right now. It is measured in degrees. At arrival the gap is 0. Scanning just means changing the gap over time: 0 → 10 → 20 → … → 45, then back the other way.</p>
+<p>This lesson covers one question: <strong>how much should the gap change in one frame?</strong></p>
+
+<h2>Speed × time = distance (for angles too)</h2>
+<p>You already know this from driving. 60 km/h for half an hour is 30 km. Rotation works the same way:</p>
+<ul>
+  <li><code>INVESTIGATE_SCAN_SPEED</code> is a <strong>rate</strong>: 45 degrees <em>per second</em>.</li>
+  <li><code>dt</code> is a <strong>duration</strong>: the seconds that passed since the last frame (about 0.0167 at 60 fps).</li>
+  <li>Rate × duration gives an <strong>amount</strong>: the degrees to turn <em>this frame</em>. The units show it: degrees/second × seconds = degrees.</li>
+</ul>
+<div class="formula">45 °/s × 0.0167 s ≈ 0.75° this frame</div>
+<p>Add 0.75° sixty times and you get 45° after one second, which is what the constant promised.</p>
+
+<h2>Why not just add a fixed amount per frame?</h2>
+<p>Frames don't arrive at a steady rate. Debug builds are slower, a busy scene drops frames, and a 144 Hz monitor runs more of them. If you add a fixed “0.75 per frame”, the agent's head turns faster on fast machines and slower on slow ones. Multiplying by <code>dt</code> makes the small steps bigger when frames are rare and smaller when they're frequent, so every machine gets 45° per real second. <a href="https://gameprogrammingpatterns.com/game-loop.html">Nystrom</a> explains this in his “One small step, one giant step” section; your Jolt movement code already does it with <code>gravity * dt</code>.</p>
+
+<table>
+  <tr><th>Frame rate</th><th>dt (s)</th><th>Degrees per frame</th><th>After 1 s</th></tr>
+  <tr><td>30 fps</td><td>0.0333</td><td>1.50</td><td>45°</td></tr>
+  <tr><td>60 fps</td><td>0.0167</td><td>0.75</td><td>45°</td></tr>
+  <tr><td>144 fps</td><td>0.0069</td><td>0.31</td><td>45°</td></tr>
+</table>
+
+<div class="panel" id="sim">
+  <svg viewBox="0 0 300 170" aria-label="Top-down view of agent scanning">
+    <circle cx="150" cy="150" r="8" fill="var(--fg)"/>
+    <line x1="150" y1="150" x2="150" y2="20" stroke="var(--muted)" stroke-dasharray="4 4"/>
+    <text x="156" y="24" font-size="11" fill="var(--muted)">facing yaw (frozen)</text>
+    <path id="arc" fill="none" stroke="var(--accent)" stroke-width="1.5"/>
+    <line id="look" x1="150" y1="150" x2="150" y2="20" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>
+  </svg>
+  <div class="controls">
+    <label>Frame rate
+      <select id="fps"><option>15</option><option>30</option><option selected>60</option><option>144</option></select>
+    </label>
+    <label><input type="checkbox" id="useDt" checked> multiply by dt</label>
+    <button id="play">Play 1 second</button>
+  </div>
+  <p style="margin:10px 0 0">Gap after this second: <output id="out">0.0°</output></p>
+  <p style="margin:4px 0 0;color:var(--muted)">Switch off “multiply by dt” and compare 15 fps with 144 fps.</p>
+</div>
+
+<h2>Which way: the sign</h2>
+<p><code>investigateScanDirection</code> is either <code>+1</code> or <code>-1</code>. Multiplying the step by it doesn't change its size, only its sign. At +1 the gap grows, so the agent turns one way. At −1 the gap shrinks, so it turns back. Next lesson you'll flip that sign at the limits. For now it stays +1.</p>
+<div class="formula">new gap = old gap + direction × speed × dt</div>
+
+<h2>Check yourself</h2>
+<div class="quiz" data-quiz='[
+  {"q":"Speed is 45 °/s and dt is 0.0167 s. How far does the agent turn this frame?","options":["45.0 degrees","0.75 degrees","2.70 degrees","0.37 degrees"],"answer":1,"why":"45 × 0.0167 ≈ 0.75. Speed is per second, and a frame is only a sliver of a second."},
+  {"q":"The game drops from 60 fps to 30 fps. How far does the agent turn in one full second?","options":["22.5 degrees","90.0 degrees","11.2 degrees","45.0 degrees"],"answer":3,"why":"Half as many frames, but dt doubles, so each step doubles. The per-second total stays 45°."},
+  {"q":"Without dt, what happens to the scan on a 144 Hz monitor compared with 60 fps?","options":["It stops at 45 degrees","It runs slower than before","It runs faster than before","It looks exactly the same"],"answer":2,"why":"A fixed per-frame step is applied 144 times a second instead of 60, so the turn is 2.4× faster."},
+  {"q":"investigateScanDirection is −1. What does that change in the update?","options":["The gap shrinks each frame","The turn speed drops to zero","The scan limit gets ignored","The facing yaw gets reset"],"answer":0,"why":"−1 flips the sign of the step, so the same-sized step is subtracted and the agent turns back."}
+]'></div>
+
+<div class="task">
+  <h3>Your turn, in the code</h3>
+  <ol>
+    <li>In <code>updateInvestigateBehavior(float dt)</code>, below the existing guard, write the one line that applies the formula above to <code>investigateScanAngle</code>.</li>
+    <li>Nothing calls that function yet. Add the call in <code>update()</code>. Work out two things first: <em>after</em> which existing call must it run (where is <code>hasReachedSoundLocation</code> set?), and <em>in which state</em> should it run (is that flag ever cleared when the agent leaves Investigate?).</li>
+    <li>Test: make a sound, let the agent arrive, and watch <code>investigateScanAngle</code> in the Visual Studio debugger (breakpoint or Watch window). Expect it to grow about 45 per second <strong>and never stop</strong>. That's correct for now. Stopping it is the next lesson.</li>
+  </ol>
+</div>
+
+<p>Keep the <a href="../reference/time-based-motion.html">time-based motion reference card</a> handy.</p>
+
+<footer>
+  <p><strong>Primary source:</strong> Robert Nystrom, <a href="https://gameprogrammingpatterns.com/game-loop.html">“Game Loop”</a>, <em>Game Programming Patterns</em>. Read “One small step, one giant step” (10 min). For the deeper story on why variable <code>dt</code> has limits, see Glenn Fiedler's <a href="https://gafferongames.com/post/fix_your_timestep/">“Fix Your Timestep!”</a>.</p>
+  <p>Stuck, or something not clear? Ask in Claude Code. That's what I'm here for.</p>
+</footer>
+</main>
+
+<script src="../assets/quiz.js"></script>
+<script>
+(() => {
+  const SPEED = 45, CX = 150, CY = 150, R = 130;
+  const look = document.getElementById("look"), arc = document.getElementById("arc");
+  const out = document.getElementById("out");
+  // Yaw convention: 0 = +Z (drawn up), positive turns toward +X (drawn right).
+  function draw(gap) {
+    const rad = gap * Math.PI / 180;
+    look.setAttribute("x2", CX + R * Math.sin(rad));
+    look.setAttribute("y2", CY - R * Math.cos(rad));
+    const shown = ((gap % 360) + 360) % 360;
+    const a = Math.min(shown, 359.9) * Math.PI / 180, r = 40;
+    arc.setAttribute("d", `M ${CX} ${CY - r} A ${r} ${r} 0 ${shown > 180 ? 1 : 0} 1 ${CX + r * Math.sin(a)} ${CY - r * Math.cos(a)}`);
+    out.textContent = gap.toFixed(1) + "°";
+  }
+  document.getElementById("play").addEventListener("click", () => {
+    const fps = +document.getElementById("fps").value;
+    const useDt = document.getElementById("useDt").checked;
+    const dt = 1 / fps, step = useDt ? SPEED * dt : SPEED * (1 / 60);
+    let gap = 0, frames = 0, start = null;
+    function tick(now) {
+      if (start === null) start = now;
+      const due = Math.min(fps, Math.floor((now - start) / 1000 * fps));
+      while (frames < due) { gap += step; frames++; }
+      draw(gap);
+      if (frames < fps) requestAnimationFrame(tick);
+    }
+    draw(0);
+    requestAnimationFrame(tick);
+  });
+  draw(0);
+})();
+</script>
+</body>
+</html>
