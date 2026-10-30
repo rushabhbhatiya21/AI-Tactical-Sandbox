@@ -32,7 +32,8 @@
 </ul>
 
 <h2>In this project</h2>
-<pre><code>investigateTimer -= dt;           // s
+<pre><code>investigateScanAngle += investigateScanDirection * INVESTIGATE_SCAN_SPEED * dt; // °
+investigateTimer -= dt;           // s
 newVelocity      += gravity * dt; // m/s</code></pre>
 
 <footer>

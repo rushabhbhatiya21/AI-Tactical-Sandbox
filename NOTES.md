@@ -13,5 +13,6 @@
 - 2026-10-30: Code review of aiController.cpp found the movement-facing yaw guard is inverted
   (`< 1e-6f` should be `> 1e-6f`): yaw is only written while stationary, and atan2(0,0) = 0 snaps the
   agent to face +Z. Raised in lesson 0001.
-- Pending: confirm timeout gated on arrival, Search timer restored in enterState, scan angle reset on arrival, cout removed.
+- 2026-10-30: Investigate scan complete and reviewed. User is implementing Search on their own; review it when they return and ask how they decided it differs from Investigate.
+- Edge case for later: hearing a new sound mid-Investigate after arrival keeps hasReachedSoundLocation true (no recapture, timer not reset).
 - Investigate scan plan: (1) angle += dir*speed*dt  (2) reverse at ±limit  (3) yaw = facing + angle.
