@@ -369,6 +369,7 @@ void AIController::enterState(AIState newState)
 	case AIState::Engage:
 		break;
 	case AIState::Investigate:
+		investigateScanAngle = 0.0f;
 		hasReachedSoundLocation = false;
 		break;
 	case AIState::Search:
@@ -383,23 +384,24 @@ void AIController::updateInvestigateBehavior(float dt)
 {
 	if (!hasReachedSoundLocation) return;
 
+	if (investigateAngleChangeTime <= 0.0f)
+	{
+		investigateScanAngle += investigateScanDirection * INVESTIGATE_SCAN_SPEED * dt;
+	}
+
 	if (investigateScanAngle >= INVESTIGATE_SCAN_ANGLE && investigateScanDirection > 0)
 	{
-		investigateScanAngle = std::clamp(investigateScanAngle, 0.0f, INVESTIGATE_SCAN_ANGLE);
+		investigateScanAngle = INVESTIGATE_SCAN_ANGLE;
 		investigateScanDirection = -1.0f;
 		investigateAngleChangeTime = INVESTIGATE_ANGLE_CHANGE_WAIT_TIME;
 	}
 
 	if (investigateScanAngle <= -INVESTIGATE_SCAN_ANGLE && investigateScanDirection < 0)
 	{
-		investigateScanAngle = std::clamp(investigateScanAngle, -INVESTIGATE_SCAN_ANGLE, 0.0f);
+		investigateScanAngle = -INVESTIGATE_SCAN_ANGLE;
 		investigateScanDirection = 1.0f;
 		investigateAngleChangeTime = INVESTIGATE_ANGLE_CHANGE_WAIT_TIME;
 	}
 
-	if (investigateAngleChangeTime <= 0.0f)
-	{
-		investigateScanAngle += investigateScanDirection * INVESTIGATE_SCAN_SPEED * dt;
-		aiAgent.transform.rotation.y = investigateFacingYaw + investigateScanAngle;
-	}
+	aiAgent.transform.rotation.y = investigateFacingYaw + investigateScanAngle;
 }
