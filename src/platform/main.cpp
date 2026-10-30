@@ -345,6 +345,27 @@ namespace
 			return;
 		}
 	}
+
+	void drawValueRow(const char* label, const AIState& state)
+	{
+		switch (state)
+		{
+		case AIState::Unaware:
+			drawValueRow(label, "UNAWARE");
+			break;
+		case AIState::Engage:
+			drawValueRow(label, "ENGAGE");
+			break;
+		case AIState::Search:
+			drawValueRow(label, "SEARCH");
+			break;
+		case AIState::Investigate:
+			drawValueRow(label, "INVESTIGATE");
+			break;
+		default:
+			break;
+		}
+	}
 }
 
 void drawAiDebugPanel(Game& game, bool& enabled)
@@ -401,6 +422,7 @@ void drawAiDebugPanel(Game& game, bool& enabled)
 		//drawStatusRow("Has heard sound", info.hasHeardSound, "YES", "NO");
 		//drawStatusRow("Has sound memory", info.hasRecentSoundMemory, "YES", "NO");
 		drawValueRow("Sound state", info.auditoryPerceptionState);
+		drawValueRow("AI State", info.currentState);
 
 
 		ImGui::Spacing();
